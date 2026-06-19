@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_DIR="$HOME/homeops/apps/homeops-lab"
+APP_DIR="$HOME/homeops/apps/homeops"
 
 echo "Deploying HomeOps from $APP_DIR"
 
