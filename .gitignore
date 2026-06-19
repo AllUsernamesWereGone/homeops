@@ -1,0 +1,13 @@
+# Local environment files
+.env
+infra/.env
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/

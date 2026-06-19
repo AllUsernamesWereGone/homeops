@@ -3,7 +3,7 @@ services:
     image: nginx:alpine
     container_name: homeops-web
     ports:
-      - "127.0.0.1:8080:80"
+      - "${HOST_IP:-127.0.0.1}:8080:80"
     volumes:
       - ../web:/usr/share/nginx/html:ro
     restart: unless-stopped
