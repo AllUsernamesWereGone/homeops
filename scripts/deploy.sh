@@ -10,9 +10,12 @@ cd "$APP_DIR"
 echo "Pulling latest changes..."
 git pull --ff-only
 
-echo "Starting containers..."
+echo "Building and starting containers..."
 cd infra
-docker compose up -d
+docker compose up -d --build
+
+echo "Removing unused Docker images..."
+docker image prune -f
 
 echo "Current containers:"
 docker compose ps
