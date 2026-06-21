@@ -31,6 +31,7 @@ out/
 # ============================================================
 # Environment / secrets
 # ============================================================
+
 .env
 .env.*
 !.env.example
@@ -50,6 +51,7 @@ apps/frontend/.env.*
 # ============================================================
 # Logs
 # ============================================================
+
 *.log
 logs/
 npm-debug.log*
@@ -60,17 +62,16 @@ pnpm-debug.log*
 # ============================================================
 # Java / Maven / Spring Boot backend
 # ============================================================
+
 apps/backend/target/
 apps/backend/.mvn/timing.properties
-
-# Keep Maven wrapper files committed:
-# backend/mvnw
-# backend/mvnw.cmd
-# backend/.mvn/wrapper/maven-wrapper.properties
-# backend/.mvn/wrapper/maven-wrapper.jar
-
-# Spring Boot generated files
 apps/backend/application.pid
+
+# Maven wrapper should stay committed
+!apps/backend/mvnw
+!apps/backend/mvnw.cmd
+!apps/backend/.mvn/wrapper/maven-wrapper.properties
+!apps/backend/.mvn/wrapper/maven-wrapper.jar
 
 # H2 database files
 *.mv.db
@@ -83,24 +84,24 @@ apps/backend/*.lock.db
 # ============================================================
 # Angular / Node frontend
 # ============================================================
+
 apps/frontend/node_modules/
 apps/frontend/dist/
 apps/frontend/.angular/
 apps/frontend/.cache/
 apps/frontend/coverage/
 
-# Angular local environment files are handled above
-
 # ============================================================
 # Docker / local runtime data
 # ============================================================
+
 docker-data/
 data/
 volumes/
 tmp/
 
-# Do not ignore Dockerfiles or compose files.
-# They should be committed:
+# Dockerfiles and Compose files should be committed.
+# Do not ignore:
 # Dockerfile
 # docker-compose.yml
 # compose.yml
@@ -108,6 +109,7 @@ tmp/
 # ============================================================
 # Test / coverage output
 # ============================================================
+
 coverage/
 test-results/
 playwright-report/
@@ -115,9 +117,10 @@ playwright-report/
 # ============================================================
 # Build artifacts
 # ============================================================
+
 *.jar
 *.war
 *.ear
 
-# Exception: normally the built application jar is not committed.
-# Maven will rebuild it from source.
+# Keep Maven wrapper JAR if present
+!apps/backend/.mvn/wrapper/maven-wrapper.jar
