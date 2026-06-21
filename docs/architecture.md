@@ -1,0 +1,5 @@
+- local dev
+- Raspberry Pi staging
+- mini PC production
+- MQTT broker role
+- backend/frontend role

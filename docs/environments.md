@@ -1,0 +1,3 @@
+- local Windows
+- Raspberry Pi staging
+- mini PC production
