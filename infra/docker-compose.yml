@@ -1,9 +1,30 @@
+name: homeops
+
 services:
-  homeops-web:
-    image: nginx:alpine
-    container_name: homeops-web
+  homeops-backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: homeops-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    networks:
+      - homeops-net
+
+  homeops-frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: homeops-frontend
+    restart: unless-stopped
     ports:
       - "${HOST_IP:-127.0.0.1}:8080:80"
-    volumes:
-      - ../web:/usr/share/nginx/html:ro
-    restart: unless-stopped
+    depends_on:
+      - homeops-backend
+    networks:
+      - homeops-net
+
+networks:
+  homeops-net:
+    name: homeops-net

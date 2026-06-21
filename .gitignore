@@ -1,13 +1,123 @@
-# Local environment files
-.env
-infra/.env
-
-# OS/editor noise
+# ============================================================
+# OS files
+# ============================================================
 .DS_Store
 Thumbs.db
+Desktop.ini
+
+# ============================================================
+# Editor / IDE files
+# ============================================================
+
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# JetBrains / IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Vim
 *.swp
 *.swo
+*~
 
+# ============================================================
+# Environment / secrets
+# ============================================================
+.env
+.env.*
+!.env.example
+
+infra/.env
+infra/.env.*
+!infra/.env.example
+
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# ============================================================
 # Logs
+# ============================================================
 *.log
 logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ============================================================
+# Java / Maven / Spring Boot backend
+# ============================================================
+backend/target/
+backend/.mvn/timing.properties
+
+# Keep Maven wrapper files committed:
+# backend/mvnw
+# backend/mvnw.cmd
+# backend/.mvn/wrapper/maven-wrapper.properties
+# backend/.mvn/wrapper/maven-wrapper.jar
+
+# Spring Boot generated files
+backend/application.pid
+
+# H2 database files
+*.mv.db
+*.trace.db
+*.lock.db
+backend/*.mv.db
+backend/*.trace.db
+backend/*.lock.db
+
+# ============================================================
+# Angular / Node frontend
+# ============================================================
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.cache/
+frontend/coverage/
+
+# Angular local environment files are handled above
+
+# ============================================================
+# Docker / local runtime data
+# ============================================================
+docker-data/
+data/
+volumes/
+tmp/
+
+# Do not ignore Dockerfiles or compose files.
+# They should be committed:
+# Dockerfile
+# docker-compose.yml
+# compose.yml
+
+# ============================================================
+# Test / coverage output
+# ============================================================
+coverage/
+test-results/
+playwright-report/
+
+# ============================================================
+# Build artifacts
+# ============================================================
+*.jar
+*.war
+*.ear
+
+# Exception: normally the built application jar is not committed.
+# Maven will rebuild it from source.

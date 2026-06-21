@@ -11,8 +11,8 @@
 	<groupId>dev.homeops</groupId>
 	<artifactId>backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>homeops-backend</name>
+	<description>Backend API for the HomeOps DevOps lab</description>
 	<url/>
 	<licenses>
 		<license/>

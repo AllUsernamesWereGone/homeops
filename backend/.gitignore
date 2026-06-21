@@ -31,3 +31,32 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### PDF-Files ###
+*.pdf
+
+### Log-Files ###
+log/
+
+### Database-Files ###
+/database/
+*.mv.db
+
+### Gradle ###
+.gradle
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+### Maven ###
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+!maven-wrapper.jar
+
+
