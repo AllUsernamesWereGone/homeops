@@ -1,10 +1,48 @@
 # HomeOps
 
-HomeOps is a personal DevOps and home infrastructure lab project.
+HomeOps is a personal DevOps and home infrastructure project focused on plant monitoring and management.
 
-The goal of this repository is to build a small but realistic full-stack system that runs on a Raspberry Pi and can later be extended with monitoring, CI/CD, sensors, IoT devices, dashboards, and automation.
+We want to help you become a helicopter parent for your houseplants.
 
-The current version contains a Spring Boot backend, an Angular frontend, Dockerfiles for both applications, and a Docker Compose deployment that runs successfully on a Raspberry Pi through Tailscale.
+Many dashboards and home automation platforms allow you to display data from or integrate with various devices. We want you to have the specialized tools and features you need to effectively manage your garden or plants at any scale.
+
+The goal of this repository is to build a lightweight full-stack system that can run on low-power hardware, including Raspberry Pis.
+
+## Features
+
+### Connect and Manage IoT Devices
+
+#### Visualize Parameters
+
+* Air humidity
+* Soil moisture
+* Temperature
+* Light exposure
+* Power consumption
+* Power creation
+* Mining/Folding/Network Monitoring
+* Device status (on/off, open/closed)
+
+#### Interact with Devices
+
+* Turn lamps on or off
+* Turn ventilation systems on or off
+* Turn pumps on or off
+
+### Automation
+
+* Create custom weather conditions
+* Automate actions based on weather forecasts
+* Define rules and schedules for plant care
+
+### Community Features
+
+* Let friends help control the environment for your plants
+* Share your garden's progress and growth with others
+
+## Vision
+
+HomeOps aims to combine home infrastructure management, IoT automation, and plant care into a single platform. Whether you're monitoring a single houseplant or managing an entire greenhouse, HomeOps provides the tools needed to observe, automate, and optimize your growing environment.
 
 ---
 
@@ -12,7 +50,6 @@ The current version contains a Spring Boot backend, an Angular frontend, Dockerf
 
 | Area                    | Status                       |
 | ----------------------- | ---------------------------- |
-| Repository              | Created and pushed to GitHub |
 | Backend                 | Spring Boot backend created  |
 | Frontend                | Angular frontend created     |
 | Local Docker Compose    | Working                      |
@@ -62,6 +99,7 @@ Windows development machine
 * Docker
 * Docker Compose
 * Raspberry Pi 4B
+* Mosquitto MQTT
 * Tailscale
 * UFW firewall
 * GitHub
@@ -82,28 +120,28 @@ homeops/
 ├── backend/
 │   ├── Dockerfile
 │   ├── pom.xml
-│   ├── mvnw
-│   ├── mvnw.cmd
 │   └── src/
 │
 ├── frontend/
 │   ├── Dockerfile
 │   ├── package.json
-│   ├── angular.json
-│   ├── nginx/
-│   │   └── default.conf
 │   └── src/
 │
 ├── infra/
 │   ├── docker-compose.yml
+│   ├── mosquitto/
+│   │   ├── mosquitto.conf
+│   │   ├── data/
+│   │   └── log/
 │   ├── .env.example
-│   └── .env              # local only, not committed
+│   └── .env
 │
 ├── scripts/
 │   └── deploy.sh
 │
 ├── docs/
-│   └── deployment.md     # planned / optional detailed deployment notes
+│   ├── deployment.md
+│   └── mqtt-topics.md
 │
 ├── .gitignore
 └── README.md
@@ -116,15 +154,32 @@ homeops/
 The deployed application currently runs as two containers:
 
 ```text
-Browser
-  |
-  | http://homeops-pi:8080
-  v
-Angular frontend container
-  |
-  | /api and /actuator are proxied internally
-  v
-Spring Boot backend container
+                       +----------------+
+                       | Angular UI     |
+                       +----------------+
+                                |
+                                | HTTP/REST
+                                v
+                       +----------------+
+                       | Spring Boot    |
+                       | Backend        |
+                       +----------------+
+                          ^          |
+               MQTT       |          | MQTT
+               Subscribe  |          | Publish
+                          |          v
+                      +-------------------+
+                      | Mosquitto Broker  |
+                      +-------------------+
+                         ^            ^
+                         |            |
+                     MQTT|            |MQTT
+                         |            |
+                         |            v
+                 +-----------+       +-----------+
+                 | Sensor    |       | Actuator  |
+                 | ESP32     |       | Pump/LED  |
+                 +-----------+       +-----------+
 ```
 
 Only the frontend container is exposed to the host.
@@ -648,5 +703,3 @@ code
   -> observe
   -> automate
 ```
-
-More advanced features should be added only after the current deployment remains stable and understandable.
