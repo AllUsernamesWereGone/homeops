@@ -39,13 +39,13 @@ infra/.env
 infra/.env.*
 !infra/.env.example
 
-backend/.env
-backend/.env.*
-!backend/.env.example
+apps/backend/.env
+apps/backend/.env.*
+!apps/backend/.env.example
 
-frontend/.env
-frontend/.env.*
-!frontend/.env.example
+apps/frontend/.env
+apps/frontend/.env.*
+!apps/frontend/.env.example
 
 # ============================================================
 # Logs
@@ -60,8 +60,8 @@ pnpm-debug.log*
 # ============================================================
 # Java / Maven / Spring Boot backend
 # ============================================================
-backend/target/
-backend/.mvn/timing.properties
+apps/backend/target/
+apps/backend/.mvn/timing.properties
 
 # Keep Maven wrapper files committed:
 # backend/mvnw
@@ -70,24 +70,24 @@ backend/.mvn/timing.properties
 # backend/.mvn/wrapper/maven-wrapper.jar
 
 # Spring Boot generated files
-backend/application.pid
+apps/backend/application.pid
 
 # H2 database files
 *.mv.db
 *.trace.db
 *.lock.db
-backend/*.mv.db
-backend/*.trace.db
-backend/*.lock.db
+apps/backend/*.mv.db
+apps/backend/*.trace.db
+apps/backend/*.lock.db
 
 # ============================================================
 # Angular / Node frontend
 # ============================================================
-frontend/node_modules/
-frontend/dist/
-frontend/.angular/
-frontend/.cache/
-frontend/coverage/
+apps/frontend/node_modules/
+apps/frontend/dist/
+apps/frontend/.angular/
+apps/frontend/.cache/
+apps/frontend/coverage/
 
 # Angular local environment files are handled above
 
