@@ -3,7 +3,7 @@ name: homeops
 services:
   homeops-backend:
     build:
-      context: ../backend
+      context: ../apps/backend
       dockerfile: Dockerfile
     container_name: homeops-backend
     restart: unless-stopped
@@ -14,7 +14,7 @@ services:
 
   homeops-frontend:
     build:
-      context: ../frontend
+      context: ../apps/frontend
       dockerfile: Dockerfile
     container_name: homeops-frontend
     restart: unless-stopped
