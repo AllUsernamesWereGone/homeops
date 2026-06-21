@@ -40,6 +40,10 @@ infra/.env
 infra/.env.*
 !infra/.env.example
 
+infra/compose/.env
+infra/compose/.env.*
+!infra/compose/.env.example
+
 apps/backend/.env
 apps/backend/.env.*
 !apps/backend/.env.example

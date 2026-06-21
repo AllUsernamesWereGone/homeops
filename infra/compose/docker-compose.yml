@@ -3,7 +3,7 @@ name: homeops
 services:
   homeops-backend:
     build:
-      context: ../apps/backend
+      context: ../../apps/backend
       dockerfile: Dockerfile
     container_name: homeops-backend
     restart: unless-stopped
@@ -14,7 +14,7 @@ services:
 
   homeops-frontend:
     build:
-      context: ../apps/frontend
+      context: ../../apps/frontend
       dockerfile: Dockerfile
     container_name: homeops-frontend
     restart: unless-stopped
@@ -32,7 +32,7 @@ services:
     ports:
       - "${HOST_IP:-127.0.0.1}:1883:1883"
     volumes:
-      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ../mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - homeops-mqtt-data:/mosquitto/data
       - homeops-mqtt-log:/mosquitto/log
     networks:
