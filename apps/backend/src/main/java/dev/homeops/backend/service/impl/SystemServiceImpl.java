@@ -1,6 +1,6 @@
 package dev.homeops.backend.service.impl;
 
-import dev.homeops.backend.endpoint.dto.SystemInfoDto;
+import dev.homeops.backend.dto.SystemInfoDto;
 import dev.homeops.backend.service.SystemService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
