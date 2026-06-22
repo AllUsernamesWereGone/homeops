@@ -6,3 +6,11 @@ coverage/
 .idea/
 *.log
 .env
+node_modules
+dist
+.angular
+.git
+.idea
+.vscode
+npm-debug.log
+.DS_Store
