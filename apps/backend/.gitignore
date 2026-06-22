@@ -37,6 +37,45 @@ build/
 
 ### Log-Files ###
 log/
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### PDF-Files ###
+*.pdf
+
+### Log-Files ###
+log/
 
 ### Database-Files ###
 /database/
@@ -58,5 +97,37 @@ dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
 !maven-wrapper.jar
+
+# Local H2 database files
+apps/backend/data/
+*.trace.db
+
+
+
+
+### Database-Files ###
+/database/
+*.mv.db
+
+### Gradle ###
+.gradle
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+### Maven ###
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+!maven-wrapper.jar
+
+# Local H2 database files
+apps/backend/data/
+*.trace.db
 
 

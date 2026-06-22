@@ -44,6 +44,7 @@ public class DeviceMapper {
             .role(trimToNull(request.role()))
             .location(trimToNull(request.location()))
             .description(trimToNull(request.description()))
+            .enabled(true)
             .capabilities(copyCapabilities(request.capabilities()))
             .build();
     }

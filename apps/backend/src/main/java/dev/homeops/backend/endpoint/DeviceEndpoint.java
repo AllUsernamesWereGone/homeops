@@ -27,11 +27,11 @@ import java.lang.invoke.MethodHandles;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/device")
+@RequestMapping(DeviceEndpoint.BASE_PATH)
 @Tag(name = "Device", description = "Operations to manage devices.")
 public class DeviceEndpoint {
 
-    public static final String BASE_PATH = "/api/v1/devices";
+    public static final String BASE_PATH = "/api/v1/device";
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final DeviceService deviceService;
