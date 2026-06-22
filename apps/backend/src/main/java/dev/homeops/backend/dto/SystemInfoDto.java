@@ -1,4 +1,4 @@
-package dev.homeops.backend.endpoint.dto;
+package dev.homeops.backend.dto;
 
 public record SystemInfoDto(
     String name,

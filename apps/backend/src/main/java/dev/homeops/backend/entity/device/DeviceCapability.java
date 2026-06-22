@@ -1,0 +1,19 @@
+package dev.homeops.backend.entity.device;
+
+public enum DeviceCapability {
+    TEMPERATURE_SENSOR,
+    HUMIDITY_SENSOR,
+    LIGHT_SENSOR,
+    FAN_SWITCH,
+    LIGHT_SWITCH,
+    CAMERA_SNAPSHOT,
+    HASHRATE_MONITORING,
+    TEMPERATURE_MONITORING,
+    CPU_METRICS,
+    MEMORY_METRICS,
+    DISK_METRICS,
+    DOCKER_HOST,
+    MQTT_BROKER,
+    CI_RUNNER,
+    OTHER
+}

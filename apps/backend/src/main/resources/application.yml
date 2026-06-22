@@ -13,3 +13,11 @@ logging:
     org.springframework.web: INFO
   pattern:
     level: r=%X{r} ip=%X{ip} u=%X{u} %5p
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha

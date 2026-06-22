@@ -1,6 +1,6 @@
 package dev.homeops.backend.service;
 
-import dev.homeops.backend.endpoint.dto.SystemInfoDto;
+import dev.homeops.backend.dto.SystemInfoDto;
 
 public interface SystemService {
 

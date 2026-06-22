@@ -1,6 +1,6 @@
 package dev.homeops.backend.endpoint;
 
-import dev.homeops.backend.endpoint.dto.SystemInfoDto;
+import dev.homeops.backend.dto.SystemInfoDto;
 import dev.homeops.backend.service.SystemService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
