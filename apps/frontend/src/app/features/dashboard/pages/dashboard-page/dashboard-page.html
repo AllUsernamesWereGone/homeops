@@ -1,0 +1,86 @@
+<main class="dashboard">
+  <section class="hero">
+    <p class="eyebrow">HomeOps</p>
+    <h1>Infrastructure Dashboard</h1>
+    <p class="subtitle">
+      Frontend, backend and deployment foundation for the HomeOps lab.
+    </p>
+  </section>
+
+  @if (loading()) {
+    <section class="card">
+      <p>Loading backend information...</p>
+    </section>
+  }
+
+  @if (errorMessage()) {
+    <section class="card error">
+      <div>
+        <h2>Backend unavailable</h2>
+        <p>{{ errorMessage() }}</p>
+      </div>
+
+      <button type="button" (click)="loadSystemInfo()">
+        Retry
+      </button>
+    </section>
+  }
+
+  @if (systemInfo(); as info) {
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <p class="section-label">Backend</p>
+          <h2>{{ info.name }}</h2>
+        </div>
+
+        <span class="status-pill" [class.status-up]="info.status === 'UP'">
+          {{ info.status }}
+        </span>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <span>Version</span>
+          <strong>{{ info.version }}</strong>
+        </div>
+
+        <div class="info-item">
+          <span>Profile</span>
+          <strong>{{ info.profile }}</strong>
+        </div>
+
+        <div class="info-item">
+          <span>API</span>
+          <strong>/api/v1/system/info</strong>
+        </div>
+
+        <div class="info-item">
+          <span>Frontend</span>
+          <strong>Angular</strong>
+        </div>
+      </div>
+    </section>
+  }
+
+  <section class="card muted">
+    <p class="section-label">Planned modules</p>
+
+    <div class="module-grid">
+      <article>
+        <h3>Devices</h3>
+        <p>Raspberry Pi, mini PC, ESP32 controllers, Antminer and laptops.</p>
+      </article>
+
+      <article>
+        <h3>MQTT</h3>
+        <p>Future communication layer between controllers and backend services.</p>
+      </article>
+
+      <article>
+        <h3>DevOps</h3>
+        <p>CI/CD, staging, monitoring, logs and deployment automation.</p>
+      </article>
+    </div>
+  </section>
+</main>

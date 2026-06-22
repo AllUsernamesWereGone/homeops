@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: homeops-backend
+
+app:
+  version: 0.0.1-SNAPSHOT
+
+logging:
+  file.name: ./logs/backend.log
+  level:
+    root: INFO
+    dev.homeops.backend: INFO
+    org.springframework.web: INFO
+  pattern:
+    level: r=%X{r} ip=%X{ip} u=%X{u} %5p
