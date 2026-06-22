@@ -8,6 +8,8 @@ import dev.homeops.backend.entity.device.DeviceCapability;
 import dev.homeops.backend.entity.device.DeviceStatus;
 import dev.homeops.backend.entity.device.DeviceTransport;
 import dev.homeops.backend.entity.device.DeviceType;
+import dev.homeops.backend.exception.ConflictException;
+import dev.homeops.backend.exception.NotFoundException;
 import dev.homeops.backend.mapper.DeviceMapper;
 import dev.homeops.backend.repository.DeviceRepository;
 import dev.homeops.backend.service.impl.DeviceServiceImpl;
@@ -17,8 +19,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -95,13 +95,12 @@ public class DeviceServiceTest {
         when(deviceRepository.findByDeviceId("missing-device"))
             .thenReturn(Optional.empty());
 
-        ResponseStatusException exception = assertThrows(
-            ResponseStatusException.class,
+        NotFoundException exception = assertThrows(
+            NotFoundException.class,
             () -> deviceService.findByDeviceId("missing-device")
         );
 
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
-        assertEquals("Device missing-device not found", exception.getReason());
+        assertEquals("Device missing-device not found", exception.getMessage());
     }
 
     @Test
@@ -111,13 +110,12 @@ public class DeviceServiceTest {
         when(deviceRepository.existsByDeviceId("greenhouse-esp32-01"))
             .thenReturn(true);
 
-        ResponseStatusException exception = assertThrows(
-            ResponseStatusException.class,
+        ConflictException exception = assertThrows(
+            ConflictException.class,
             () -> deviceService.create(request)
         );
 
-        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
-        assertEquals("Device greenhouse-esp32-01 already exists", exception.getReason());
+        assertEquals("Device greenhouse-esp32-01 already exists", exception.getMessage());
     }
 
     @Test
@@ -145,7 +143,7 @@ public class DeviceServiceTest {
         assertEquals(DeviceType.MICROCONTROLLER, result.type());
         assertEquals(DeviceStatus.UNKNOWN, result.status());
         assertEquals(DeviceTransport.MQTT, result.transport());
-        assertFalse(result.enabled());
+        assertTrue(result.enabled());
         assertTrue(result.capabilities().contains(DeviceCapability.TEMPERATURE_SENSOR));
 
         ArgumentCaptor<Device> captor = ArgumentCaptor.forClass(Device.class);
@@ -178,7 +176,7 @@ public class DeviceServiceTest {
 
         assertEquals(DeviceStatus.UNKNOWN, result.status());
         assertEquals(DeviceTransport.UNKNOWN, result.transport());
-        assertFalse(result.enabled());
+        assertTrue(result.enabled());
         assertNotNull(result.capabilities());
         assertTrue(result.capabilities().isEmpty());
     }
@@ -236,13 +234,12 @@ public class DeviceServiceTest {
         when(deviceRepository.findByDeviceId("greenhouse-esp32-01"))
             .thenReturn(Optional.of(device));
 
-        ResponseStatusException exception = assertThrows(
-            ResponseStatusException.class,
+        ConflictException exception = assertThrows(
+            ConflictException.class,
             () -> deviceService.update("greenhouse-esp32-01", request)
         );
 
-        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
-        assertEquals("Device was modified by another request", exception.getReason());
+        assertEquals("Device was modified by another request", exception.getMessage());
     }
 
     @Test
