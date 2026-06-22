@@ -11,7 +11,7 @@ echo "Pulling latest changes..."
 git pull --ff-only
 
 echo "Building and starting containers..."
-cd infra
+cd infra/compose
 docker compose up -d --build
 
 echo "Removing unused Docker images..."
