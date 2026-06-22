@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { SystemInfoDto } from '../dtos/system-info.dto';
+import {Injectable} from '@angular/core';
+import {HttpClient} from '@angular/common/http';
+import {Observable} from 'rxjs';
+import {SystemInfoDto} from '../../api/models/system-info-dto';
+
 
 @Injectable({
   providedIn: 'root'
