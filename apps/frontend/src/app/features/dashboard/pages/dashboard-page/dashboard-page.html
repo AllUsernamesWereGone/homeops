@@ -3,84 +3,141 @@
     <p class="eyebrow">HomeOps</p>
     <h1>Infrastructure Dashboard</h1>
     <p class="subtitle">
-      Frontend, backend and deployment foundation for the HomeOps lab.
+      Frontend, backend and device registry foundation for the HomeOps lab.
     </p>
   </section>
 
   @if (loading()) {
     <section class="card">
-      <p>Loading backend information...</p>
+      <p>Loading dashboard data...</p>
     </section>
   }
 
   @if (errorMessage()) {
     <section class="card error">
       <div>
-        <h2>Backend unavailable</h2>
+        <h2>Dashboard unavailable</h2>
         <p>{{ errorMessage() }}</p>
       </div>
 
-      <button type="button" (click)="loadSystemInfo()">
+      <button type="button" (click)="loadDashboard()">
         Retry
       </button>
     </section>
   }
 
-  @if (systemInfo(); as info) {
+  @if (!loading() && !errorMessage()) {
+    @if (systemInfo(); as info) {
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <p class="section-label">Backend</p>
+            <h2>{{ info.name }}</h2>
+          </div>
+
+          <span class="status-pill" [class.status-online]="info.status === 'UP'">
+            {{ info.status }}
+          </span>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <span>Version</span>
+            <strong>{{ info.version }}</strong>
+          </div>
+
+          <div class="info-item">
+            <span>Profile</span>
+            <strong>{{ info.profile }}</strong>
+          </div>
+
+          <div class="info-item">
+            <span>System API</span>
+            <strong>/api/v1/system/info</strong>
+          </div>
+
+          <div class="info-item">
+            <span>Device API</span>
+            <strong>/api/v1/device</strong>
+          </div>
+        </div>
+      </section>
+    }
+
     <section class="card">
       <div class="card-header">
         <div>
-          <p class="section-label">Backend</p>
-          <h2>{{ info.name }}</h2>
+          <p class="section-label">Device Registry</p>
+          <h2>Registered devices</h2>
         </div>
 
-        <span class="status-pill" [class.status-up]="info.status === 'UP'">
-          {{ info.status }}
-        </span>
-      </div>
-
-      <div class="info-grid">
-        <div class="info-item">
-          <span>Version</span>
-          <strong>{{ info.version }}</strong>
-        </div>
-
-        <div class="info-item">
-          <span>Profile</span>
-          <strong>{{ info.profile }}</strong>
-        </div>
-
-        <div class="info-item">
-          <span>API</span>
-          <strong>/api/v1/system/info</strong>
-        </div>
-
-        <div class="info-item">
-          <span>Frontend</span>
-          <strong>Angular</strong>
+        <div class="summary-pills">
+          <span class="summary-pill">{{ devices().length }} total</span>
+          <span class="summary-pill online">{{ onlineDeviceCount() }} online</span>
         </div>
       </div>
+
+      @if (devices().length === 0) {
+        <p class="empty-text">No devices registered yet.</p>
+      } @else {
+        <div class="device-grid">
+          @for (device of devices(); track device.deviceId) {
+            <article class="device-card" [class.disabled]="!device.enabled">
+              <div class="device-header">
+                <div>
+                  <h3>{{ device.displayName }}</h3>
+                  <p class="device-id">{{ device.deviceId }}</p>
+                </div>
+
+                <span
+                  class="status-pill"
+                  [class.status-online]="device.status === 'ONLINE'"
+                  [class.status-error]="device.status === 'ERROR'"
+                  [class.status-offline]="device.status === 'OFFLINE'"
+                >
+                  {{ device.status }}
+                </span>
+              </div>
+
+              <p class="device-description">
+                {{ device.description || 'No description provided.' }}
+              </p>
+
+              <div class="device-meta">
+                <div>
+                  <span>Type</span>
+                  <strong>{{ device.type }}</strong>
+                </div>
+
+                <div>
+                  <span>Transport</span>
+                  <strong>{{ device.transport }}</strong>
+                </div>
+
+                <div>
+                  <span>Location</span>
+                  <strong>{{ device.location || 'Unknown' }}</strong>
+                </div>
+
+                <div>
+                  <span>Last seen</span>
+                  <strong>{{ formatDateTime(device.lastSeenAt) }}</strong>
+                </div>
+              </div>
+
+              @if (device.role) {
+                <p class="role">{{ device.role }}</p>
+              }
+
+              <div class="capabilities">
+                @for (capability of device.capabilities; track capability) {
+                  <span>{{ formatCapability(capability) }}</span>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      }
     </section>
   }
-
-  <section class="card muted">
-    <p class="section-label">Planned modules</p>
-
-    <div class="module-grid">
-      <article>
-        <h3>Devices</h3>
-        <p>Raspberry Pi, mini PC, ESP32 controllers, Antminer and laptops.</p>
-      </article>
-
-      <article>
-        <h3>MQTT</h3>
-        <p>Future communication layer between controllers and backend services.</p>
-      </article>
-
-      <article>
-        <h3>DevOps</h3>
-        <p>CI/CD, staging, monitoring, logs and deployment automation.</p>
-      </article>
-    </div>
-  </section>
 </main>
