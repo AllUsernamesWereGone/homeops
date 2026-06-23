@@ -15,9 +15,10 @@ jobs:
 
     steps:
       #downloads repo into github runner
-      - run: echo "Backend"
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - run: echo "Backend"
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -42,9 +43,11 @@ jobs:
         working-directory: apps/frontend
 
     steps:
-      - run: echo "Frontend"
+
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - run: echo "Frontend"
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -67,9 +70,11 @@ jobs:
       - frontend-build
 
     steps:
-      - run: echo "Docker"
+
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - run: echo "Docker"
 
       - name: Build backend Docker image
         run: docker build -t homeops-backend:ci ./apps/backend
