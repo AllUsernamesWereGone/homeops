@@ -3,3 +3,10 @@ target/
 *.iml
 *.log
 .env
+target
+logs
+database
+.git
+.idea
+.vscode
+.DS_Store

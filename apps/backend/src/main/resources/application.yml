@@ -15,12 +15,15 @@ spring:
     open-in-view: false
   application:
     name: homeops-backend
+  devtools:
+    restart:
+      enabled: false
 
 app:
   version: 0.0.1-SNAPSHOT
 
 logging:
-  file.name: ./logs/backend.log
+  file.name: ${HOMEOPS_LOG_FILE:./logs/backend.log}
   level:
     root: INFO
     dev.homeops.backend: INFO
@@ -35,3 +38,9 @@ springdoc:
     path: /swagger-ui.html
     operations-sorter: method
     tags-sorter: alpha
+    
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

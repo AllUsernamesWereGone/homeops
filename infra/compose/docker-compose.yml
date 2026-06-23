@@ -8,9 +8,22 @@ services:
     container_name: homeops-backend
     restart: unless-stopped
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: docker, generateData
+      HOMEOPS_DB_PATH: /data/homeops-db
+      HOMEOPS_LOG_FILE: /logs/backend.log
+    volumes:
+      - homeops-backend-data:/data
+      - homeops-backend-logs:/logs
+    expose:
+      - "8080"
     networks:
       - homeops-net
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'" ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   homeops-frontend:
     build:
@@ -21,7 +34,8 @@ services:
     ports:
       - "${HOST_IP:-127.0.0.1}:8080:80"
     depends_on:
-      - homeops-backend
+      homeops-backend:
+        condition: service_started
     networks:
       - homeops-net
 
@@ -39,6 +53,8 @@ services:
       - homeops-net
 
 volumes:
+  homeops-backend-data:
+  homeops-backend-logs:
   homeops-mqtt-data:
   homeops-mqtt-log:
 
