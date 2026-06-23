@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,7 +28,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.List;
 
 @RestController
-@RequestMapping(DeviceEndpoint.BASE_PATH)
+@RequestMapping(value = DeviceEndpoint.BASE_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "Device", description = "Operations to manage devices.")
 public class DeviceEndpoint {
 
@@ -87,7 +88,7 @@ public class DeviceEndpoint {
      * @param request device creation request
      * @return created device
      */
-    @PostMapping
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(
         summary = "Create device",
@@ -110,7 +111,7 @@ public class DeviceEndpoint {
      * @param request  device update request
      * @return updated device
      */
-    @PutMapping("/{deviceId}")
+    @PutMapping(value = "/{deviceId}", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
         summary = "Update device",
         description = "Updates an existing device registry entry. The request must contain the current version for optimistic locking."
