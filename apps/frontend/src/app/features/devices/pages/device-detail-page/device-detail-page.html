@@ -1,0 +1,64 @@
+<main class="device-detail-page">
+  <a routerLink="/devices" class="back-link">Back to devices</a>
+
+  @if (loading()) {
+    <section class="card">
+      <p>Loading device...</p>
+    </section>
+  }
+
+  @if (errorMessage()) {
+    <section class="card error">
+      <p>{{ errorMessage() }}</p>
+    </section>
+  }
+
+  @if (device(); as device) {
+    <section class="card">
+      <header class="detail-header">
+        <div>
+          <p class="eyebrow">{{ device.deviceId }}</p>
+          <h1>{{ device.displayName }}</h1>
+          <p>{{ device.description || 'No description provided.' }}</p>
+        </div>
+
+        <div class="detail-actions">
+          <a [routerLink]="['/devices', device.deviceId, 'edit']" class="secondary-button">Edit</a>
+          <button type="button" class="danger-button" (click)="deleteDevice()">Delete</button>
+        </div>
+      </header>
+
+      <div class="detail-grid">
+        <div>
+          <span>Status</span>
+          <strong>{{ device.status }}</strong>
+        </div>
+
+        <div>
+          <span>Type</span>
+          <strong>{{ device.type }}</strong>
+        </div>
+
+        <div>
+          <span>Transport</span>
+          <strong>{{ device.transport }}</strong>
+        </div>
+
+        <div>
+          <span>Location</span>
+          <strong>{{ device.location || 'Unknown' }}</strong>
+        </div>
+
+        <div>
+          <span>Role</span>
+          <strong>{{ device.role || 'None' }}</strong>
+        </div>
+
+        <div>
+          <span>Enabled</span>
+          <strong>{{ device.enabled ? 'Yes' : 'No' }}</strong>
+        </div>
+      </div>
+    </section>
+  }
+</main>

@@ -1,0 +1,100 @@
+<main class="device-form-page">
+  <a routerLink="/devices" class="back-link">Back to devices</a>
+
+  <section class="card">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Device Registry</p>
+        <h1>{{ editMode ? 'Edit device' : 'Create device' }}</h1>
+      </div>
+    </header>
+
+    @if (loading()) {
+      <p>Loading device...</p>
+    }
+
+    @if (errorMessage()) {
+      <p class="error-text">{{ errorMessage() }}</p>
+    }
+
+    @if (!loading()) {
+      <form [formGroup]="form" (ngSubmit)="save()" class="device-form">
+        <label>
+          Device ID
+          <input type="text" formControlName="deviceId" placeholder="raspberry-pi-4">
+        </label>
+
+        <label>
+          Display name
+          <input type="text" formControlName="displayName" placeholder="Raspberry Pi 4">
+        </label>
+
+        <label>
+          Type
+          <select formControlName="type">
+            @for (type of deviceTypes; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Transport
+          <select formControlName="transport">
+            @for (transport of deviceTransports; track transport) {
+              <option [value]="transport">{{ transport }}</option>
+            }
+          </select>
+        </label>
+
+        @if (editMode) {
+          <label>
+            Status
+            <select formControlName="status">
+              @for (status of deviceStatuses; track status) {
+                <option [value]="status">{{ status }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="checkbox-row">
+            <input type="checkbox" formControlName="enabled">
+            Enabled
+          </label>
+        }
+
+        <label>
+          Role
+          <input type="text" formControlName="role" placeholder="HomeOps server">
+        </label>
+
+        <label>
+          Location
+          <input type="text" formControlName="location" placeholder="Desk">
+        </label>
+
+        <label class="full-width">
+          Description
+          <textarea formControlName="description" rows="4"></textarea>
+        </label>
+
+        <label class="full-width">
+          Capabilities
+          <select formControlName="capabilities" multiple>
+            @for (capability of deviceCapabilities; track capability) {
+              <option [value]="capability">{{ capability }}</option>
+            }
+          </select>
+        </label>
+
+        <div class="form-actions">
+          <a routerLink="/devices" class="secondary-button">Cancel</a>
+
+          <button type="submit" class="primary-button" [disabled]="saving()">
+            {{ saving() ? 'Saving...' : 'Save device' }}
+          </button>
+        </div>
+      </form>
+    }
+  </section>
+</main>
