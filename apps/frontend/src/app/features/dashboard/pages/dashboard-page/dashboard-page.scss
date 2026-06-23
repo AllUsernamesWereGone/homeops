@@ -22,6 +22,52 @@
   padding: 2rem 0;
 }
 
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 1.5rem;
+}
+
+.dashboard-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.85rem;
+  padding: 0.8rem 1.1rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform 120ms ease,
+  background 120ms ease,
+  border-color 120ms ease;
+}
+
+.dashboard-button:hover {
+  transform: translateY(-1px);
+}
+
+.dashboard-button.primary {
+  border: 1px solid rgba(56, 189, 248, 0.75);
+  background: #38bdf8;
+  color: #082f49;
+}
+
+.dashboard-button.secondary {
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.76);
+  color: #e5e7eb;
+}
+
+.dashboard-button.small {
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  background: rgba(56, 189, 248, 0.1);
+  color: #bae6fd;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
 .eyebrow,
 .section-label {
   margin: 0 0 0.5rem;
