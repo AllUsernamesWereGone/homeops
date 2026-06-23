@@ -2,6 +2,9 @@ import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {SystemInfoDto} from '../../api/models/system-info-dto';
+import {ApiConfiguration} from '../../api/api-configuration';
+import {map} from 'rxjs/operators';
+import {getSystemInfo} from '../../api/functions';
 
 
 @Injectable({
@@ -9,12 +12,16 @@ import {SystemInfoDto} from '../../api/models/system-info-dto';
 })
 export class SystemApiService {
 
-  private readonly baseUrl = '/api/v1/system';
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private apiConfiguration: ApiConfiguration
+  ) {
   }
 
   getSystemInfo(): Observable<SystemInfoDto> {
-    return this.http.get<SystemInfoDto>(`${this.baseUrl}/info`);
+    return getSystemInfo(this.http, this.apiConfiguration.rootUrl, {}).pipe(
+      map(response => response.body)
+    );
   }
 }
