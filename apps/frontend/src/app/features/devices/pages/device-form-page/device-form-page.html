@@ -6,6 +6,9 @@
       <div>
         <p class="eyebrow">Device Registry</p>
         <h1>{{ editMode ? 'Edit device' : 'Create device' }}</h1>
+        <p class="subtitle">
+          Register and maintain devices used by the HomeOps lab.
+        </p>
       </div>
     </header>
 
@@ -85,6 +88,9 @@
               <option [value]="capability">{{ capability }}</option>
             }
           </select>
+          <span class="validation-hint">
+            Hold Ctrl to select multiple capabilities.
+          </span>
         </label>
 
         <div class="form-actions">

@@ -83,4 +83,12 @@ export class DeviceDetailPage implements OnInit {
     });
   }
 
+  formatDateTime(value?: string): string {
+    if (!value) {
+      return 'Never';
+    }
+
+    return new Date(value).toLocaleString();
+  }
+
 }

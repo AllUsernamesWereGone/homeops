@@ -17,48 +17,75 @@
     <section class="card">
       <header class="detail-header">
         <div>
-          <p class="eyebrow">{{ device.deviceId }}</p>
-          <h1>{{ device.displayName }}</h1>
-          <p>{{ device.description || 'No description provided.' }}</p>
+          <p class="eyebrow">{{ device.deviceId ?? 'Device' }}</p>
+          <h1>{{ device.displayName ?? 'Unnamed device' }}</h1>
+          <p class="detail-description">
+            {{ device.description || 'No description provided.' }}
+          </p>
         </div>
 
         <div class="detail-actions">
-          <a [routerLink]="['/devices', device.deviceId, 'edit']" class="secondary-button">Edit</a>
-          <button type="button" class="danger-button" (click)="deleteDevice()">Delete</button>
+          @if (device.deviceId; as deviceId) {
+            <a [routerLink]="['/devices', deviceId, 'edit']" class="secondary-button">
+              Edit
+            </a>
+          }
+
+          <button type="button" class="danger-button" (click)="deleteDevice()">
+            Delete
+          </button>
         </div>
       </header>
 
       <div class="detail-grid">
-        <div>
+        <div class="detail-item">
           <span>Status</span>
-          <strong>{{ device.status }}</strong>
+          <strong>{{ device.status ?? 'UNKNOWN' }}</strong>
         </div>
 
-        <div>
+        <div class="detail-item">
           <span>Type</span>
-          <strong>{{ device.type }}</strong>
+          <strong>{{ device.type ?? 'OTHER' }}</strong>
         </div>
 
-        <div>
+        <div class="detail-item">
           <span>Transport</span>
-          <strong>{{ device.transport }}</strong>
+          <strong>{{ device.transport ?? 'UNKNOWN' }}</strong>
         </div>
 
-        <div>
+        <div class="detail-item">
           <span>Location</span>
           <strong>{{ device.location || 'Unknown' }}</strong>
         </div>
 
-        <div>
+        <div class="detail-item">
           <span>Role</span>
           <strong>{{ device.role || 'None' }}</strong>
         </div>
 
-        <div>
+        <div class="detail-item">
           <span>Enabled</span>
-          <strong>{{ device.enabled ? 'Yes' : 'No' }}</strong>
+          <strong>{{ device.enabled === false ? 'No' : 'Yes' }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Last seen</span>
+          <strong>{{ formatDateTime(device.lastSeenAt) }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Version</span>
+          <strong>{{ device.version ?? '-' }}</strong>
         </div>
       </div>
+
+      @if ((device.capabilities ?? []).length > 0) {
+        <div class="capability-list">
+          @for (capability of device.capabilities ?? []; track capability) {
+            <span>{{ capability }}</span>
+          }
+        </div>
+      }
     </section>
   }
 </main>

@@ -3,7 +3,9 @@
     <div>
       <p class="eyebrow">Devices</p>
       <h1>Device Registry</h1>
-      <p class="subtitle">Manage Raspberry Pis, ESP32 controllers, miners, routers and lab machines.</p>
+      <p class="subtitle">
+        Manage Raspberry Pis, ESP32 controllers, miners, routers and lab machines.
+      </p>
     </div>
 
     <a routerLink="/devices/new" class="primary-button">
@@ -20,22 +22,46 @@
   @if (errorMessage()) {
     <section class="card error">
       <p>{{ errorMessage() }}</p>
-      <button type="button" (click)="loadDevices()">Retry</button>
+      <button type="button" class="secondary-button" (click)="loadDevices()">Retry</button>
     </section>
   }
 
   @if (!loading() && !errorMessage()) {
     <section class="card">
       @if (devices().length === 0) {
-        <p>No devices registered yet.</p>
+        <p class="empty-state">No devices registered yet.</p>
       } @else {
         <div class="device-list">
-          @for (device of devices(); track device.deviceId) {
+          @for (device of devices(); track device.deviceId ?? $index) {
             <article class="device-row">
               <div>
-                <h2>{{ device.displayName }}</h2>
-                <p>{{ device.deviceId }}</p>
-                <p>{{ device.description || 'No description provided.' }}</p>
+                <h2>{{ device.displayName ?? 'Unnamed device' }}</h2>
+
+                <p class="device-id">
+                  {{ device.deviceId ?? 'missing-device-id' }}
+                </p>
+
+                <p class="device-description">
+                  {{ device.description || 'No description provided.' }}
+                </p>
+
+                <div class="device-tags">
+                  @if (device.status) {
+                    <span>{{ device.status }}</span>
+                  }
+
+                  @if (device.type) {
+                    <span>{{ device.type }}</span>
+                  }
+
+                  @if (device.transport) {
+                    <span>{{ device.transport }}</span>
+                  }
+
+                  @if (device.location) {
+                    <span>{{ device.location }}</span>
+                  }
+                </div>
               </div>
 
               <div class="device-actions">
@@ -43,7 +69,10 @@
                   <a [routerLink]="['/devices', deviceId]">Details</a>
                   <a [routerLink]="['/devices', deviceId, 'edit']">Edit</a>
                 }
-                <button type="button" (click)="deleteDevice(device)">Delete</button>
+
+                <button type="button" (click)="deleteDevice(device)">
+                  Delete
+                </button>
               </div>
             </article>
           }
