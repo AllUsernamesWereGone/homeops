@@ -19,9 +19,14 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  background: var(--color-bg);
   color: var(--color-text);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)),
+  url('/assets/images/background/background_main.png') center / cover no-repeat fixed;
 }
 
 h1,
