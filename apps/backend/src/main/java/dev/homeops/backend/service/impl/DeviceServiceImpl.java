@@ -49,13 +49,13 @@ public class DeviceServiceImpl implements DeviceService {
     @Override
     @Transactional
     public DeviceDto create(DeviceCreateDto request) {
-        String normalizedDeviceId = deviceMapper.normalizeDeviceId(request.deviceId());
+        String deviceId = deviceMapper.normalizeDeviceId(request.deviceId());
 
         LOGGER.info("Creating device with deviceId={}", request.deviceId());
 
-        if (deviceRepository.existsByDeviceId(normalizedDeviceId)) {
+        if (deviceRepository.existsByDeviceId(deviceId)) {
             throw new ConflictException(
-                "Device " + normalizedDeviceId + " already exists"
+                "Device " + deviceId + " already exists"
             );
         }
 

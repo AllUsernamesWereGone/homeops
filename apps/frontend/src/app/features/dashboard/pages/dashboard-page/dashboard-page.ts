@@ -5,12 +5,13 @@ import {SystemInfoDto} from '../../../../api/models/system-info-dto';
 import {DeviceDto} from '../../../../api/models/device-dto';
 import {SystemApiService} from '../../../../core/api/system-api.service';
 import {DeviceApiService} from '../../../../core/api/device-api.service';
+import {RouterLink} from '@angular/router';
 
 
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './dashboard-page.html',
   styleUrl: './dashboard-page.scss'
 })

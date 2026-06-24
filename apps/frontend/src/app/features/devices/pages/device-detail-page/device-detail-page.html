@@ -1,0 +1,91 @@
+<main class="device-detail-page">
+  <a routerLink="/devices" class="back-link">Back to devices</a>
+
+  @if (loading()) {
+    <section class="card">
+      <p>Loading device...</p>
+    </section>
+  }
+
+  @if (errorMessage()) {
+    <section class="card error">
+      <p>{{ errorMessage() }}</p>
+    </section>
+  }
+
+  @if (device(); as device) {
+    <section class="card">
+      <header class="detail-header">
+        <div>
+          <p class="eyebrow">{{ device.deviceId ?? 'Device' }}</p>
+          <h1>{{ device.displayName ?? 'Unnamed device' }}</h1>
+          <p class="detail-description">
+            {{ device.description || 'No description provided.' }}
+          </p>
+        </div>
+
+        <div class="detail-actions">
+          @if (device.deviceId; as deviceId) {
+            <a [routerLink]="['/devices', deviceId, 'edit']" class="secondary-button">
+              Edit
+            </a>
+          }
+
+          <button type="button" class="danger-button" (click)="deleteDevice()">
+            Delete
+          </button>
+        </div>
+      </header>
+
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span>Status</span>
+          <strong>{{ device.status ?? 'UNKNOWN' }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Type</span>
+          <strong>{{ device.type ?? 'OTHER' }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Transport</span>
+          <strong>{{ device.transport ?? 'UNKNOWN' }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Location</span>
+          <strong>{{ device.location || 'Unknown' }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Role</span>
+          <strong>{{ device.role || 'None' }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Enabled</span>
+          <strong>{{ device.enabled === false ? 'No' : 'Yes' }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Last seen</span>
+          <strong>{{ formatDateTime(device.lastSeenAt) }}</strong>
+        </div>
+
+        <div class="detail-item">
+          <span>Version</span>
+          <strong>{{ device.version ?? '-' }}</strong>
+        </div>
+      </div>
+
+      @if ((device.capabilities ?? []).length > 0) {
+        <div class="capability-list">
+          @for (capability of device.capabilities ?? []; track capability) {
+            <span>{{ capability }}</span>
+          }
+        </div>
+      }
+    </section>
+  }
+</main>

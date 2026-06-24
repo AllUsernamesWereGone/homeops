@@ -58,6 +58,8 @@ apps/frontend/.env.*
 
 *.log
 logs/
+log
+database
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

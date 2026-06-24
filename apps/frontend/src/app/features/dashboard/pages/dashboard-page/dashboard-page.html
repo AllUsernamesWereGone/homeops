@@ -5,6 +5,15 @@
     <p class="subtitle">
       Frontend, backend and device registry foundation for the HomeOps lab.
     </p>
+    <div class="hero-actions">
+      <a routerLink="/devices" class="dashboard-button primary">
+        View all devices
+      </a>
+
+      <a routerLink="/devices/new" class="dashboard-button secondary">
+        Register device
+      </a>
+    </div>
   </section>
 
   @if (loading()) {
@@ -74,6 +83,7 @@
         <div class="summary-pills">
           <span class="summary-pill">{{ devices().length }} total</span>
           <span class="summary-pill online">{{ onlineDeviceCount() }} online</span>
+          <a routerLink="/devices" class="dashboard-button small">Manage devices</a>
         </div>
       </div>
 
