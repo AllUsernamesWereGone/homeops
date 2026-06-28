@@ -10,10 +10,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.domain.Persistable;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -23,14 +27,20 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "device_telemetry_state")
-public class DeviceTelemetryState {
+public class DeviceTelemetryState implements Persistable<UUID> {
 
     @Id
     @Column(name = "device_pk", nullable = false)
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "device_pk", nullable = false)
+    @JoinColumn(
+        name = "device_pk",
+        referencedColumnName = "id",
+        nullable = false,
+        insertable = false,
+        updatable = false
+    )
     private Device device;
 
     @Enumerated(EnumType.STRING)
@@ -54,8 +64,22 @@ public class DeviceTelemetryState {
     @Column(nullable = false)
     private String rawPayload;
 
+    @Transient
+    private boolean newEntity = true;
+
     public DeviceTelemetryState(Device device) {
-        this.device = device;
         this.id = device.getId();
+        this.device = device;
+    }
+
+    @Override
+    public boolean isNew() {
+        return newEntity;
+    }
+
+    @PostLoad
+    @PostPersist
+    void markNotNew() {
+        this.newEntity = false;
     }
 }
