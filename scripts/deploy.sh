@@ -46,6 +46,27 @@ docker image prune -f
 echo "Current containers:"
 docker compose ps
 
+echo "Waiting for backend healthcheck..."
+
+for i in {1..30}; do
+  BACKEND_HEALTH="$(docker inspect --format='{{.State.Health.Status}}' homeops-backend 2>/dev/null || echo starting)"
+
+  if [ "$BACKEND_HEALTH" = "healthy" ]; then
+    echo "Backend is healthy."
+    break
+  fi
+
+  if [ "$BACKEND_HEALTH" = "unhealthy" ]; then
+    echo "ERROR: Backend became unhealthy"
+    docker compose logs --tail=20 homeops-backend
+    exit 1
+  fi
+
+  echo "Backend health: $BACKEND_HEALTH"
+  sleep 2
+done
+
+
 echo "Testing backend through frontend proxy..."
 HOST_IP_VALUE="$(grep '^HOST_IP=' .env | cut -d '=' -f2)"
 curl -fsS "http://${HOST_IP_VALUE}:8080/api/v1/system/info" || {
