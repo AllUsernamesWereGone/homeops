@@ -19,14 +19,14 @@
 
 #define MEM_LIBC_MALLOC             0
 #define MEM_ALIGNMENT               4
-#define MEM_SIZE                    4000
+#define MEM_SIZE                    16000
 
-#define MEMP_NUM_TCP_PCB            4
-#define MEMP_NUM_TCP_SEG            16
+#define MEMP_NUM_TCP_PCB            6
+#define MEMP_NUM_TCP_SEG            32
 #define MEMP_NUM_UDP_PCB            4
-#define MEMP_NUM_SYS_TIMEOUT        8
+#define MEMP_NUM_SYS_TIMEOUT        16
 
-#define PBUF_POOL_SIZE              24
+#define PBUF_POOL_SIZE              32
 #define PBUF_POOL_BUFSIZE           512
 
 #define TCP_MSS                     1460

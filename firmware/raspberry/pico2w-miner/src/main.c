@@ -16,6 +16,7 @@
 #include "wifi.h"
 #include "stratum_tcp.h"
 #include "stratum.h"
+#include "mqtt_homeops.h"
 
 #include "../secrets.h"
 
@@ -38,6 +39,11 @@
 
 #ifndef LED_DELAY_MS
 #define LED_DELAY_MS 250
+
+#define HOMEOPS_MQTT_CONNECT_TIMEOUT_MS 15000
+#define HOMEOPS_MQTT_RECONNECT_INTERVAL_MS 30000
+
+
 #endif
 
 // Initialize the onboard LED.
@@ -200,16 +206,16 @@ int main() {
 
     // Give the USB serial connection time to become available after boot.
     sleep_ms(5000);
-    
+
 
     if(!self_tests()){
         while (true){
             printf("Self tests failed.\n");
             sleep_ms(2000);
-        }       
+        }
     }
     printf("Pico 2 W Bitcoin Self tests passed\n");
-    
+
 
     int rc = pico_led_init();
     hard_assert(rc == PICO_OK);
@@ -223,6 +229,17 @@ int main() {
     printf("WiFi: starting connection attempts\n");
 
     bool wifi_connected = wifi_connect_to_first_available();
+
+    bool mqtt_connected = false;
+    absolute_time_t next_mqtt_reconnect = make_timeout_time_ms(1000);
+
+    if (wifi_connected) {
+        mqtt_connected = mqtt_homeops_connect_blocking(HOMEOPS_MQTT_CONNECT_TIMEOUT_MS);
+
+        if (!mqtt_connected) {
+            next_mqtt_reconnect = make_timeout_time_ms(HOMEOPS_MQTT_RECONNECT_INTERVAL_MS);
+        }
+    }
 
     if (wifi_connected) {
         printf("Pool: connecting to %s:%d\n", STRATUM_HOST, STRATUM_PORT);
@@ -281,6 +298,16 @@ int main() {
 
     while (true) {
         const stratum_state_t *state = stratum_get_state();
+
+        if (wifi_connected && !mqtt_homeops_is_connected() && time_reached(next_mqtt_reconnect)) {
+            printf("HOMEOPS MQTT: reconnect attempt\n");
+
+            mqtt_connected = mqtt_homeops_connect_blocking(HOMEOPS_MQTT_CONNECT_TIMEOUT_MS);
+
+            if (!mqtt_connected) {
+                next_mqtt_reconnect = make_timeout_time_ms(HOMEOPS_MQTT_RECONNECT_INTERVAL_MS);
+            }
+        }
 
         if (
             state->subscribed &&
@@ -377,6 +404,21 @@ int main() {
                 hashrate = (uint32_t)(
                     (serial_hash_accumulator * 1000000ull) / (uint64_t)elapsed_us
                 );
+            }
+
+            uint32_t uptime_seconds = (uint32_t)(to_ms_since_boot(get_absolute_time()) / 1000u);
+
+            mqtt_connected = mqtt_homeops_publish_telemetry(
+                hashrate,
+                0,
+                uptime_seconds,
+                miner.shares_found,
+                stratum_tcp_is_connected(),
+                has_active_job
+            );
+
+            if (!mqtt_connected) {
+                next_mqtt_reconnect = make_timeout_time_ms(HOMEOPS_MQTT_RECONNECT_INTERVAL_MS);
             }
 
             miner_hash_to_display_hex(miner.last_hash, hash_hex);

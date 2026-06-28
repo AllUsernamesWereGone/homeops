@@ -7,7 +7,7 @@
 
 #include "../secrets.h"
 
-#define WIFI_CONNECT_TIMEOUT_MS 20000
+#define WIFI_CONNECT_TIMEOUT_MS 45000
 
 static const char *connected_ssid = NULL;
 

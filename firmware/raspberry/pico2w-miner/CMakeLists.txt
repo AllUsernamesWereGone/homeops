@@ -47,31 +47,33 @@ add_executable(bitcoin_miner_pico2w
     src/wifi.c
     src/stratum_tcp.c
     src/stratum.c
+    src/mqtt_homeops.c
     )
 
     target_compile_options(bitcoin_miner_pico2w PRIVATE
         -O3
         -DNDEBUG
         -funroll-loops
-        
+
     )
 
     target_link_options(bitcoin_miner_pico2w PRIVATE
         -O3
-        
+
     )
 
 # pull in common dependencies
-target_link_libraries(bitcoin_miner_pico2w 
-    pico_stdlib 
+target_link_libraries(bitcoin_miner_pico2w
+    pico_stdlib
     hardware_spi
     hardware_pwm
     )
 
 
 if (PICO_CYW43_SUPPORTED)
-    target_link_libraries(bitcoin_miner_pico2w 
+    target_link_libraries(bitcoin_miner_pico2w
     pico_cyw43_arch_lwip_threadsafe_background
+    pico_lwip_mqtt
     )
 endif()
 
