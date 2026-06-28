@@ -16,3 +16,7 @@ logging:
     root: INFO
     dev.homeops.backend: INFO
     org.springframework.web: INFO
+
+homeops:
+  mqtt:
+    broker-url: ${HOMEOPS_MQTT_BROKER_URL:tcp://mqtt:1883}

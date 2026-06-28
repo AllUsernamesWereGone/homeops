@@ -44,3 +44,10 @@ management:
     web:
       exposure:
         include: health,info
+
+homeops:
+  mqtt:
+    enabled: true
+    broker-url: ${HOMEOPS_MQTT_BROKER_URL:tcp://homeops-pi:1883}
+    client-id: ${HOMEOPS_MQTT_CLIENT_ID:homeops-backend}
+    topic-prefix: ${HOMEOPS_MQTT_TOPIC_PREFIX:homeops}
