@@ -27,12 +27,12 @@ import java.util.UUID;
 public class DeviceTelemetryState {
 
     @Id
-    @Column(name = "device_id")
-    private UUID deviceId;
+    @Column(name = "device_pk", nullable = false)
+    private UUID id;
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "device_id")
+    @JoinColumn(name = "device_pk", nullable = false)
     private Device device;
 
     @Enumerated(EnumType.STRING)
@@ -58,6 +58,6 @@ public class DeviceTelemetryState {
 
     public DeviceTelemetryState(Device device) {
         this.device = device;
-        this.deviceId = device.getId();
+        this.id = device.getId();
     }
 }
