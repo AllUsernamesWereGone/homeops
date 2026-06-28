@@ -49,7 +49,7 @@ services:
     container_name: homeops-mqtt
     restart: unless-stopped
     ports:
-      - "${HOST_IP:-127.0.0.1}:1883:1883"
+      - "${MQTT_HOST_IP:-0.0.0.0}:1883:1883"
     volumes:
       - ../mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - homeops-mqtt-data:/mosquitto/data
