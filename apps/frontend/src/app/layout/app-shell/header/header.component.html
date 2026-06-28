@@ -10,5 +10,13 @@
 
   <div class="header-spacer"></div>
 
-  <span class="system-pill system-pill--online">Backend Up</span>
+  <span
+    class="system-pill"
+    [class.system-pill--checking]="backendUp() === null"
+    [class.system-pill--online]="backendUp()"
+    [class.system-pill--offline]="!backendUp()"
+    [title]="healthTitle()"
+  >
+    {{ healthLabel() }}
+  </span>
 </header>
