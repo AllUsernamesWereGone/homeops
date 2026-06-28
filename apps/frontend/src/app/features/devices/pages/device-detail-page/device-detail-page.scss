@@ -3,8 +3,7 @@
 }
 
 .device-detail-page {
-  min-height: 100vh;
-  padding: 3rem 1.5rem;
+  padding: 0;
 }
 
 .device-detail-page > * {
@@ -23,6 +22,7 @@
 
 .detail-header h1 {
   margin: 0;
+  color: #f8fafc;
   font-size: clamp(2rem, 4vw, 3.3rem);
   line-height: 1.05;
 }
@@ -30,8 +30,9 @@
 .detail-description {
   max-width: 760px;
   margin: 0.8rem 0 0;
-  color: var(--color-muted);
+  color: #cbd5e1;
   font-size: 1.05rem;
+  line-height: 1.55;
 }
 
 .detail-actions {
@@ -48,21 +49,23 @@
 }
 
 .detail-item {
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 0.9rem;
   padding: 1rem;
-  background: #f8fafc;
+  background: rgba(2, 6, 23, 0.52);
+  color: #f8fafc;
 }
 
 .detail-item span {
   display: block;
   margin-bottom: 0.35rem;
-  color: var(--color-muted);
+  color: #94a3b8;
   font-size: 0.82rem;
   font-weight: 700;
 }
 
 .detail-item strong {
+  color: #f8fafc;
   word-break: break-word;
 }
 
@@ -74,19 +77,16 @@
 }
 
 .capability-list span {
+  border: 1px solid rgba(56, 189, 248, 0.28);
   border-radius: 999px;
   padding: 0.35rem 0.65rem;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
   font-size: 0.78rem;
   font-weight: 800;
 }
 
 @media (max-width: 750px) {
-  .device-detail-page {
-    padding: 2rem 1rem;
-  }
-
   .detail-header {
     flex-direction: column;
   }

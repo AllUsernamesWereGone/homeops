@@ -1,0 +1,21 @@
+<div
+  class="app-shell"
+  [class.app-shell--sidebar-collapsed]="sidebarCollapsed()"
+>
+  <app-header/>
+
+  <div class="app-body">
+    <app-sidebar
+      [collapsed]="sidebarCollapsed()"
+      (toggleSidebar)="toggleSidebar()"
+    />
+
+    <main class="app-content">
+      <router-outlet/>
+    </main>
+
+    <app-right-sidebar/>
+  </div>
+
+  <app-footer/>
+</div>
