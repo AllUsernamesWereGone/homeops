@@ -1,0 +1,85 @@
+<aside class="left-sidebar" [class.left-sidebar--collapsed]="collapsed">
+  <div class="sidebar-header">
+    @if (!collapsed) {
+      <span class="sidebar-title">Navigation</span>
+    }
+
+    <button
+      type="button"
+      class="sidebar-toggle"
+      (click)="toggleSidebar.emit()"
+      [attr.aria-label]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+    >
+      @if (collapsed) {
+        →
+      } @else {
+        ←
+      }
+    </button>
+  </div>
+
+  <nav class="sidebar-nav" aria-label="Main navigation">
+    <section class="sidebar-section">
+      @if (!collapsed) {
+        <p class="sidebar-label">Core</p>
+      }
+
+      <a
+        routerLink="/"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="sidebar-link"
+        title="Dashboard"
+      >
+        <span class="sidebar-icon">▦</span>
+
+        @if (!collapsed) {
+          <span class="sidebar-text">Dashboard</span>
+        }
+      </a>
+
+      <a
+        routerLink="/devices"
+        routerLinkActive="active"
+        class="sidebar-link"
+        title="Devices"
+      >
+        <span class="sidebar-icon">●</span>
+
+        @if (!collapsed) {
+          <span class="sidebar-text">Devices</span>
+        }
+      </a>
+    </section>
+
+    <section class="sidebar-section">
+      @if (!collapsed) {
+        <p class="sidebar-label">Planned</p>
+      }
+
+      <span class="sidebar-link sidebar-link--disabled" title="MQTT">
+        <span class="sidebar-icon">⌁</span>
+
+        @if (!collapsed) {
+          <span class="sidebar-text">MQTT</span>
+        }
+      </span>
+
+      <span class="sidebar-link sidebar-link--disabled" title="Monitoring">
+        <span class="sidebar-icon">◈</span>
+
+        @if (!collapsed) {
+          <span class="sidebar-text">Monitoring</span>
+        }
+      </span>
+
+      <span class="sidebar-link sidebar-link--disabled" title="Settings">
+        <span class="sidebar-icon">⚙</span>
+
+        @if (!collapsed) {
+          <span class="sidebar-text">Settings</span>
+        }
+      </span>
+    </section>
+  </nav>
+</aside>

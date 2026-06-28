@@ -14,10 +14,16 @@ export const deviceRoutes: Routes = [
   },
   {
     path: ':deviceId',
-    component: DeviceDetailPage
+    component: DeviceDetailPage,
+    data: {
+      rightSidebar: true
+    }
   },
   {
     path: ':deviceId/edit',
-    component: DeviceFormPage
+    component: DeviceFormPage,
+    data: {
+      rightSidebar: true
+    }
   }
 ]

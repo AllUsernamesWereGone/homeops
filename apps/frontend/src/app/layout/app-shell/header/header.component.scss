@@ -1,0 +1,71 @@
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
+  min-height: 4.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+
+  padding: 0 1.5rem;
+  background: rgba(2, 6, 23, 0.82);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  backdrop-filter: blur(18px);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #f8fafc;
+  text-decoration: none;
+}
+
+.brand-mark {
+  width: 2.4rem;
+  height: 2.4rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.8rem;
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  color: #020617;
+  font-weight: 900;
+}
+
+.brand-text {
+  display: grid;
+  line-height: 1.1;
+}
+
+.brand-text strong {
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.brand-text small {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.header-spacer {
+  flex: 1;
+}
+
+.system-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.system-pill--online {
+  color: #86efac;
+  background: rgba(22, 163, 74, 0.16);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}

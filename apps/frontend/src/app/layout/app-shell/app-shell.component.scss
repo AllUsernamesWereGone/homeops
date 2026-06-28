@@ -1,0 +1,105 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  color: #f8fafc;
+
+  background: linear-gradient(
+      90deg,
+      rgba(2, 6, 23, 0.78) 0%,
+      rgba(15, 23, 42, 0.58) 48%,
+      rgba(15, 23, 42, 0.70) 100%
+  ),
+  url('/assets/images/background/background_main.png');
+
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.app-body {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 17rem minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.app-shell--sidebar-collapsed .app-body {
+  grid-template-columns: 4.75rem minmax(0, 1fr);
+}
+
+.app-shell--with-right-sidebar .app-body {
+  grid-template-columns: 17rem minmax(0, 1fr) 20rem;
+}
+
+.app-shell--with-right-sidebar.app-shell--sidebar-collapsed .app-body {
+  grid-template-columns: 4.75rem minmax(0, 1fr) 20rem;
+}
+
+.app-content {
+  min-width: 0;
+  padding: 1.5rem;
+}
+
+.right-sidebar {
+  border-left: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(2, 6, 23, 0.58);
+  backdrop-filter: blur(18px);
+  padding: 1.5rem 1rem;
+}
+
+.right-sidebar-card {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 1rem;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.74);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+}
+
+.right-sidebar-card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.right-sidebar-card p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+@media (max-width: 1300px) {
+  .app-shell--with-right-sidebar .app-body,
+  .app-shell--with-right-sidebar.app-shell--sidebar-collapsed .app-body {
+    grid-template-columns: 17rem minmax(0, 1fr);
+  }
+
+  .app-shell--with-right-sidebar.app-shell--sidebar-collapsed .app-body {
+    grid-template-columns: 4.75rem minmax(0, 1fr);
+  }
+
+  .right-sidebar {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    background-attachment: scroll;
+  }
+
+  .app-body,
+  .app-shell--sidebar-collapsed .app-body,
+  .app-shell--with-right-sidebar .app-body,
+  .app-shell--with-right-sidebar.app-shell--sidebar-collapsed .app-body {
+    grid-template-columns: 1fr;
+  }
+
+  .app-content {
+    padding: 1rem;
+  }
+}

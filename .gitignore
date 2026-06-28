@@ -130,3 +130,13 @@ playwright-report/
 
 # Keep Maven wrapper JAR if present
 !apps/backend/.mvn/wrapper/maven-wrapper.jar
+
+
+# Runtime-generated files
+/runtime/
+/logs/
+/database/
+
+# H2 database files
+*.mv.db
+*.trace.db
