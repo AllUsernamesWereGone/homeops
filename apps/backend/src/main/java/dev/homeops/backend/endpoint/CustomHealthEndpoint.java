@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.availability.AvailabilityChangeEvent;
 import org.springframework.boot.availability.LivenessState;
 import org.springframework.context.ApplicationContext;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,7 +21,7 @@ import java.lang.invoke.MethodHandles;
  * This endpoint is used for kubernetes health checks.
  */
 @RestController
-@RequestMapping(value = CustomHealthEndpoint.BASE_PATH, produces = MediaType.TEXT_PLAIN_VALUE)
+@RequestMapping(value = CustomHealthEndpoint.BASE_PATH)
 public class CustomHealthEndpoint {
 
     private final ApplicationContext applicationContext;
@@ -35,11 +37,15 @@ public class CustomHealthEndpoint {
 
 
     @PermitAll
-    @GetMapping
+    @GetMapping(produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> getHealth() {
         LOG.trace("GET {}", BASE_PATH);
         if (status) {
-            return ResponseEntity.ok("OK");
+            return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .header(HttpHeaders.PRAGMA, "no-cache")
+                .header(HttpHeaders.EXPIRES, "0")
+                .body("OK");
         }
         return ResponseEntity.internalServerError().build();
     }
