@@ -133,6 +133,13 @@ public class DeviceTelemetryIngestionServiceImpl implements DeviceTelemetryInges
         String dataJson,
         String rawPayload
     ) {
+        if (device.getId() == null) {
+            throw new IllegalStateException(
+                "Cannot store telemetry for device without internal ID: "
+                    + device.getDeviceId()
+            );
+        }
+
         DeviceTelemetryState state = stateRepository.findById(device.getId())
             .orElseGet(() -> new DeviceTelemetryState(device));
 
