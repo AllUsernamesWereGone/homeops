@@ -1,4 +1,4 @@
-OBname: homeops
+name: homeops
 
 services:
   homeops-backend:
