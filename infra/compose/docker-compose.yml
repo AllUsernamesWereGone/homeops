@@ -11,11 +11,16 @@ services:
       SPRING_PROFILES_ACTIVE: docker, generateData
       HOMEOPS_DB_PATH: /data/homeops-db
       HOMEOPS_LOG_FILE: /logs/backend.log
+      HOMEOPS_MQTT_ENABLED: "true"
+      HOMEOPS_MQTT_BROKER_URL: tcp://homeops-mqtt:1883
     volumes:
       - homeops-backend-data:/data
       - homeops-backend-logs:/logs
     expose:
       - "8080"
+    depends_on:
+      homeops-mqtt:
+        condition: service_started
     networks:
       - homeops-net
     healthcheck:
