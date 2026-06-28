@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:file:${HOMEOPS_DB_PATH:./database/db};AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:file:${HOMEOPS_DB_PATH:./runtime/backend/database/db};AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: ${HOMEOPS_DB_USER:sa}
     password: ${HOMEOPS_DB_PASSWORD:}
@@ -23,7 +23,7 @@ app:
   version: 0.0.1-SNAPSHOT
 
 logging:
-  file.name: ${HOMEOPS_LOG_FILE:./logs/backend.log}
+  file.name: ${HOMEOPS_LOG_FILE:./runtime/backend/logs/backend.log}
   level:
     root: INFO
     dev.homeops.backend: INFO
@@ -38,7 +38,7 @@ springdoc:
     path: /swagger-ui.html
     operations-sorter: method
     tags-sorter: alpha
-    
+
 management:
   endpoints:
     web:
