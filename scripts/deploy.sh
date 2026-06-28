@@ -63,7 +63,7 @@ for i in {1..30}; do
   fi
 
   echo "Backend health: $BACKEND_HEALTH"
-  sleep 2
+  sleep 3
 done
 
 
