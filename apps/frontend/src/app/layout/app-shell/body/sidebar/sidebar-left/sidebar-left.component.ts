@@ -8,10 +8,10 @@ import {RouterLink, RouterLinkActive} from '@angular/router';
     RouterLink,
     RouterLinkActive,
   ],
-  templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.scss',
+  templateUrl: './sidebar-left.component.html',
+  styleUrl: './sidebar-left.component.scss',
 })
-export class SidebarComponent {
+export class SidebarLeftComponent {
   @Input() collapsed = false;
 
   @Output() toggleSidebar = new EventEmitter<void>();
