@@ -47,7 +47,7 @@ management:
 
 homeops:
   mqtt:
-    enabled: true
+    enabled: ${HOMEOPS_MQTT_ENABLED:true}
     broker-url: ${HOMEOPS_MQTT_BROKER_URL:tcp://homeops-pi:1883}
-    client-id: ${HOMEOPS_MQTT_CLIENT_ID:homeops-backend}
+    client-id: ${HOMEOPS_MQTT_CLIENT_ID:homeops-backend-dev}
     topic-prefix: ${HOMEOPS_MQTT_TOPIC_PREFIX:homeops}
