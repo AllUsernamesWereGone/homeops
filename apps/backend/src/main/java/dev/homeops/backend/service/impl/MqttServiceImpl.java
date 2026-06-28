@@ -29,6 +29,12 @@ public class MqttServiceImpl implements MqttService {
         try {
             telemetryIngestionService.ingest(topic, payload);
         } catch (RuntimeException exception) {
+            //LOGGER.error(
+            //    "MQTT message handling failed topic={} payload={}",
+            //    topic,
+            //    payload,
+            //    exception
+            //);
             LOGGER.warn("MQTT message ignored topic={} reason={}", topic, exception.getMessage());
             LOGGER.debug("MQTT message handling failed", exception);
         }
