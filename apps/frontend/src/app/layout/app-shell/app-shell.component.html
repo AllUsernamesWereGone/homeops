@@ -1,0 +1,33 @@
+<div
+  class="app-shell"
+  [class.app-shell--sidebar-collapsed]="sidebarCollapsed()"
+  [class.app-shell--with-right-sidebar]="showRightSidebar()"
+>
+  <app-header/>
+
+  <div class="app-body">
+    <app-sidebar
+      [collapsed]="sidebarCollapsed()"
+      (toggleSidebar)="toggleSidebar()"
+    />
+
+    <main class="app-content">
+      <router-outlet/>
+    </main>
+
+    @if (showRightSidebar()) {
+      <aside class="right-sidebar" aria-label="Context sidebar">
+        <section class="right-sidebar-card">
+          <p class="eyebrow">Context</p>
+          <h2>Device tools</h2>
+          <p>
+            Prepared for telemetry, MQTT messages, alerts, quick commands,
+            and page-specific actions.
+          </p>
+        </section>
+      </aside>
+    }
+  </div>
+
+  <app-footer/>
+</div>
