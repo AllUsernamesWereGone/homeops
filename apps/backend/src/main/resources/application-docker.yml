@@ -19,4 +19,7 @@ logging:
 
 homeops:
   mqtt:
-    broker-url: ${HOMEOPS_MQTT_BROKER_URL:tcp://mqtt:1883}
+    enabled: ${HOMEOPS_MQTT_ENABLED:true}
+    broker-url: ${HOMEOPS_MQTT_BROKER_URL:tcp://homeops-mqtt:1883}
+    client-id: ${HOMEOPS_MQTT_CLIENT_ID:homeops-backend}
+    topic-prefix: ${HOMEOPS_MQTT_TOPIC_PREFIX:homeops}
