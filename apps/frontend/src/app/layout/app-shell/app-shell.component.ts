@@ -6,6 +6,7 @@ import {filter, map, startWith} from 'rxjs';
 import {HeaderComponent} from './header/header.component';
 import {SidebarLeftComponent} from './body/sidebar/sidebar-left/sidebar-left.component';
 import {FooterComponent} from './footer/footer.component';
+import {SidebarRightComponent} from "./body/sidebar/sidebar-right/sidebar-right.component";
 
 @Component({
     selector: 'app-shell',
@@ -15,6 +16,7 @@ import {FooterComponent} from './footer/footer.component';
         HeaderComponent,
         SidebarLeftComponent,
         FooterComponent,
+        SidebarRightComponent
     ],
     templateUrl: './app-shell.component.html',
     styleUrl: './app-shell.component.scss',
