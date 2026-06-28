@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_DIR="$HOME/homeops/apps/homeops"
+APP_DIR="$HOME/homeops"
 COMPOSE_DIR="$APP_DIR/infra/compose"
 
 NO_CACHE="${NO_CACHE:-false}"
