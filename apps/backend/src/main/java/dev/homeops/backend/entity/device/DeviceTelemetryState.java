@@ -9,7 +9,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
-import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -30,7 +29,6 @@ public class DeviceTelemetryState {
     @Column(name = "device_pk", nullable = false)
     private UUID id;
 
-    @MapsId
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "device_pk", nullable = false)
     private Device device;
