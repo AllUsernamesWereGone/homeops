@@ -5,8 +5,8 @@ COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
 
-RUN chmod +x mvnw
-RUN ./mvnw dependency:go-offline
+RUN chmod +x mvnw \
+    && ./mvnw dependency:go-offline
 
 COPY src src
 RUN ./mvnw clean package -DskipTests
@@ -14,6 +14,7 @@ RUN ./mvnw clean package -DskipTests
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 
+# hadolint ignore=DL3008
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
