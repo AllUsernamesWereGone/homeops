@@ -1,4 +1,0 @@
-- topic naming
-- sample payloads
-- command format
-- availability format

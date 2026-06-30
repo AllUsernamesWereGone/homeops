@@ -4,9 +4,11 @@ HomeOps is a personal DevOps and home infrastructure project focused on plant mo
 
 We want to help you become a helicopter parent for your houseplants.
 
-Many dashboards and home automation platforms allow you to display data from or integrate with various devices. We want you to have the specialized tools and features you need to effectively manage your garden or plants at any scale.
+Many dashboards and home automation platforms allow you to display data from or integrate with various devices. We want
+you to have the specialized tools and features you need to effectively manage your garden or plants at any scale.
 
-The goal of this repository is to build a lightweight full-stack system that can run on low-power hardware, including Raspberry Pis.
+The goal of this repository is to build a lightweight full-stack system that can run on low-power hardware, including
+Raspberry Pis.
 
 ## Features
 
@@ -42,23 +44,25 @@ The goal of this repository is to build a lightweight full-stack system that can
 
 ## Vision
 
-HomeOps aims to combine home infrastructure management, IoT automation, and plant care into a single platform. Whether you're monitoring a single houseplant or managing an entire greenhouse, HomeOps provides the tools needed to observe, automate, and optimize your growing environment.
+HomeOps aims to combine home infrastructure management, IoT automation, and plant care into a single platform. Whether
+you're monitoring a single houseplant or managing an entire greenhouse, HomeOps provides the tools needed to observe,
+automate, and optimize your growing environment.
 
 ---
 
 ## Current Status
 
-| Area                    | Status                       |
-| ----------------------- | ---------------------------- |
-| Backend                 | Spring Boot backend created  |
-| Frontend                | Angular frontend created     |
-| Local Docker Compose    | Working                      |
-| Raspberry Pi Deployment | Working                      |
-| Tailscale Access        | Working                      |
-| CI/CD                   | Planned                      |
-| Monitoring              | Planned                      |
-| Database                | Planned                      |
-| IoT/Sensor Integration  | Planned                      |
+| Area                    | Status                      |
+|-------------------------|-----------------------------|
+| Backend                 | Spring Boot backend created |
+| Frontend                | Angular frontend created    |
+| Local Docker Compose    | Working                     |
+| Raspberry Pi Deployment | Working                     |
+| Tailscale Access        | Working                     |
+| CI/CD                   | Planned                     |
+| Monitoring              | Planned                     |
+| Database                | Planned                     |
+| IoT/Sensor Integration  | Planned                     |
 
 Current deployment target:
 
@@ -171,14 +175,14 @@ The deployed application currently runs as two containers:
                       +-------------------+
                       | Mosquitto Broker  |
                       +-------------------+
-                         ^            ^
-                         |            |
-                     MQTT|            |MQTT
-                         |            |
-                         |            v
+                         ^
+                         |
+                     MQTT|
+                         |
+                         v
                  +-----------+       +-----------+
-                 | Sensor    |       | Actuator  |
-                 | ESP32     |       | Pump/LED  |
+                 | Sensor    | wired | Actuator  |
+                 | ESP32     |<----->| Pump/LED  |
                  +-----------+       +-----------+
 ```
 
@@ -263,14 +267,6 @@ Install the following on the development machine:
 * Docker Desktop
 * IntelliJ IDEA Ultimate
 * Git Bash
-
-The Raspberry Pi should have:
-
-* Docker
-* Docker Compose plugin
-* Git
-* Tailscale
-* UFW configured for SSH and application access over Tailscale
 
 ---
 
@@ -518,97 +514,6 @@ homeops-backend:8080
 
 ---
 
-## Troubleshooting
-
-### Port 8080 Is Already Allocated
-
-Error example:
-
-```text
-Bind for 100.x.x.x:8080 failed: port is already allocated
-```
-
-Check which container uses the port:
-
-```bash
-docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}"
-```
-
-Check the process:
-
-```bash
-sudo ss -ltnp | grep ':8080'
-```
-
-If an old test container is using the port, remove it:
-
-```bash
-docker stop homeops-web
-docker rm homeops-web
-```
-
-Restart the stack:
-
-```bash
-cd ~/homeops/apps/homeops/infra
-docker compose down
-docker compose up -d
-```
-
----
-
-### Docker Desktop Pipe Error on Windows
-
-Error example:
-
-```text
-open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified
-```
-
-This usually means Docker Desktop is not running or the Linux engine is unavailable.
-
-Fix:
-
-1. Start Docker Desktop
-2. Wait until it is fully running
-3. Check:
-
-```bash
-docker version
-docker info
-docker context ls
-```
-
-If needed:
-
-```bash
-docker context use desktop-linux
-```
-
----
-
-### Wrong HOST_IP
-
-If local Windows Docker tries to bind to the Raspberry Pi's Tailscale IP, startup fails.
-
-For local Windows Docker:
-
-```env
-HOST_IP=127.0.0.1
-```
-
-For Raspberry Pi deployment:
-
-```env
-HOST_IP=100.x.x.x
-```
-
-Rule:
-
-```text
-HOST_IP must be an IP address owned by the machine running Docker Compose.
-```
-
 ---
 
 ## Roadmap
@@ -690,16 +595,3 @@ HOST_IP must be an IP address owned by the machine running Docker Compose.
 
 ## Notes
 
-This project intentionally starts simple.
-
-The first goal is not to build a complex application immediately.
-The first goal is to create a reliable DevOps foundation:
-
-```text
-code
-  -> build
-  -> containerize
-  -> deploy
-  -> observe
-  -> automate
-```
