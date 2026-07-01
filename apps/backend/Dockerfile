@@ -1,4 +1,4 @@
-FROM eclipse-temurin:25-jdk AS build
+FROM docker.io/library/eclipse-temurin:25-jdk AS build
 WORKDIR /app
 
 COPY mvnw .
@@ -11,7 +11,7 @@ RUN chmod +x mvnw \
 COPY src src
 RUN ./mvnw clean package -DskipTests
 
-FROM eclipse-temurin:25-jre
+FROM docker.io/library/eclipse-temurin:25-jre
 WORKDIR /app
 
 # hadolint ignore=DL3008
