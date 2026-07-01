@@ -12,6 +12,32 @@ on:
       - main
 
 jobs:
+  backend-checkstyle:
+    name: Backend Checkstyle
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: apps/backend/pom.xml
+
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
+      - name: Run Checkstyle
+        run: ./mvnw checkstyle:check -Dcheckstyle.config.location=checkstyle.xml
+
   backend-test:
     name: Backend tests
     runs-on: ubuntu-latest #temporary github linux VM
@@ -69,12 +95,50 @@ jobs:
       - name: Build frontend
         run: npm run build -- --configuration production
 
+  compose-validate:
+    name: Validate Docker Compose
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Create compose env file
+        working-directory: infra/compose
+        run: |
+          cp .env.example .env
+
+      - name: Validate compose config
+        working-directory: infra/compose
+        run: docker compose config
+
+  dockerfile-lint:
+    name: Dockerfile lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Lint backend Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: apps/backend/Dockerfile
+
+      - name: Lint frontend Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: apps/frontend/Dockerfile
+
+
   docker-build:
     name: Docker build
     runs-on: ubuntu-latest
     needs:
       - backend-test
       - frontend-build
+      - compose-validate
+      - dockerfile-lint
 
     steps:
 
