@@ -4,6 +4,8 @@ set -euo pipefail
 APP_DIR="$HOME/homeops"
 COMPOSE_DIR="$APP_DIR/infra/compose"
 
+MQTT_HOST_IP_VALUE="$(grep '^MQTT_HOST_IP=' .env | cut -d '=' -f2 || true)"
+
 NO_CACHE="${NO_CACHE:-false}"
 
 echo "Deploying HomeOps from $APP_DIR"
@@ -26,6 +28,9 @@ if [ ! -f "$COMPOSE_DIR/.env" ]; then
 fi
 
 cd "$COMPOSE_DIR"
+
+echo "Validating Docker Compose config..."
+docker compose config >/dev/null
 
 echo "Stopping old containers and removing orphans..."
 docker compose down --remove-orphans
@@ -66,6 +71,14 @@ for i in {1..30}; do
   sleep 3
 done
 
+BACKEND_HEALTH="$(docker inspect --format='{{.State.Health.Status}}' homeops-backend 2>/dev/null || echo missing)"
+
+if [ "$BACKEND_HEALTH" != "healthy" ]; then
+  echo "ERROR: Backend did not become healthy. Final status: $BACKEND_HEALTH"
+  docker compose logs --tail=50 homeops-backend
+  exit 1
+fi
+
 
 echo "Testing backend through frontend proxy..."
 HOST_IP_VALUE="$(grep '^HOST_IP=' .env | cut -d '=' -f2)"
@@ -73,6 +86,23 @@ curl -fsS "http://${HOST_IP_VALUE}:8080/api/v1/system/info" || {
   echo "ERROR: Backend API check failed"
   exit 1
 }
+
+echo "Testing frontend..."
+curl -fsS "http://${HOST_IP_VALUE}:8080/" >/dev/null || {
+  echo "ERROR: Frontend check failed"
+  exit 1
+}
+
+
+echo "Testing MQTT port..."
+if command -v nc >/dev/null 2>&1; then
+  nc -z "${HOST_IP_VALUE}" 1883 || {
+    echo "ERROR: MQTT port check failed on ${HOST_IP_VALUE}:1883"
+    exit 1
+  }
+else
+  echo "Skipping MQTT TCP check because nc is not installed."
+fi
 
 echo
 echo "Deployment finished."
