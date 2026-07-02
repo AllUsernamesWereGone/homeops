@@ -141,3 +141,5 @@ playwright-report/
 *.mv.db
 *.trace.db
 /firmware/raspberry/pico2w-miner/secrets.h
+firmware/esp32/secrets.h
+firmware/esp32/src/secrets.h
