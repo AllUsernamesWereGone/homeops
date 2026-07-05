@@ -15,6 +15,7 @@ import {
 } from '../../utils/device-detail-view-model.util';
 import {DeviceControlModal} from '../../components/device-control-modal/device-control-modal';
 import {DeviceTelemetryStateDto} from '../../../../api/models/device-telemetry-state-dto';
+import {DeviceCommandApiService} from '../../../../core/api/device-command-api.service';
 
 @Component({
   selector: 'app-device-detail-page',
@@ -40,11 +41,14 @@ export class DeviceDetailPage implements OnInit {
   telemetryCards = computed(() => buildTelemetryCards(this.deviceState()));
   controlCards = computed(() => buildControlCards(this.device(), this.deviceState()));
 
+  commandPublishing = signal<boolean>(false);
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private deviceApiService: DeviceApiService,
-    private deviceStateApiService: DeviceStateApiService
+    private deviceStateApiService: DeviceStateApiService,
+    private deviceCommandApiService: DeviceCommandApiService
   ) {
   }
 
@@ -112,13 +116,37 @@ export class DeviceDetailPage implements OnInit {
   }
 
   applyControlChange(change: DeviceControlChange): void {
-    this.selectedControl.set(undefined);
+    const deviceId = this.device()?.deviceId;
 
-    this.controlMessage.set(
-      `Prepared ${change.control.command} for ${change.control.target}.${change.control.property} = ${change.value}. Backend command publishing is the next implementation step.`
-    );
+    if (!deviceId) {
+      this.controlMessage.set('Cannot publish command because the device id is missing.');
+      this.selectedControl.set(undefined);
+      return;
+    }
 
-    console.info('Prepared device control change', change);
+    this.commandPublishing.set(true);
+    this.controlMessage.set(undefined);
+
+    this.deviceCommandApiService.publishCommand(deviceId, {
+      command: change.control.command,
+      target: change.control.target,
+      property: change.control.property,
+      value: this.deviceCommandApiService.toJsonNode(change.value)
+    }).subscribe({
+      next: result => {
+        this.selectedControl.set(undefined);
+        this.commandPublishing.set(false);
+
+        this.controlMessage.set(
+          `Published ${result.command} to ${result.topic}.`
+        );
+      },
+      error: error => {
+        console.error('Failed to publish command', error);
+        this.commandPublishing.set(false);
+        this.controlMessage.set('Could not publish device command.');
+      }
+    });
   }
 
   deleteDevice(): void {
