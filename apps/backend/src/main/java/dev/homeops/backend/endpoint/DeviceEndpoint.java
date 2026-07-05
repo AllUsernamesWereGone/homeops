@@ -2,8 +2,10 @@ package dev.homeops.backend.endpoint;
 
 import dev.homeops.backend.dto.device.DeviceCreateDto;
 import dev.homeops.backend.dto.device.DeviceDto;
+import dev.homeops.backend.dto.device.DeviceTelemetryStateDto;
 import dev.homeops.backend.dto.device.DeviceUpdateDto;
 import dev.homeops.backend.service.DeviceService;
+import dev.homeops.backend.service.DeviceTelemetryStateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -36,9 +38,11 @@ public class DeviceEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final DeviceService deviceService;
+    private final DeviceTelemetryStateService deviceTelemetryStateService;
 
-    public DeviceEndpoint(DeviceService deviceService) {
+    public DeviceEndpoint(DeviceService deviceService, DeviceTelemetryStateService deviceTelemetryStateService) {
         this.deviceService = deviceService;
+        this.deviceTelemetryStateService = deviceTelemetryStateService;
     }
 
     /**
@@ -80,6 +84,23 @@ public class DeviceEndpoint {
     ) {
         LOG.trace("GET {}/{}", BASE_PATH, deviceId);
         return deviceService.findByDeviceId(deviceId);
+    }
+
+    @GetMapping("/{deviceId}/state")
+    @Operation(
+        summary = "Get latest device state",
+        description = "Returns the latest stored MQTT state or telemetry payload for this device."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Latest state returned successfully"),
+        @ApiResponse(responseCode = "404", description = "Device or latest state was not found")
+    })
+    public DeviceTelemetryStateDto findLatestStateByDeviceId(
+        @Parameter(description = "Stable external device id", example = "greenhouse-esp32-01")
+        @PathVariable String deviceId
+    ) {
+        LOG.trace("GET {}/{}/state", BASE_PATH, deviceId);
+        return deviceTelemetryStateService.findLatestByDeviceId(deviceId);
     }
 
     /**
