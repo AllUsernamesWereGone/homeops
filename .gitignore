@@ -136,6 +136,8 @@ playwright-report/
 
 # H2 database files
 /firmware/raspberry/pico2w-miner/secrets.h
+firmware/esp32/secrets.h
+firmware/esp32/src/secrets.h
 
 # PlatformIO
 **/.pio/

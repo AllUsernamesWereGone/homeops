@@ -1,0 +1,67 @@
+# Simple ESP controller for a Greenhouse
+
+Contains:
+    - Temperature
+    - Humidity
+    - Light Level
+    - PWM Fan Control
+    - Grow Lamp Button Automation
+
+See Schematics for parts used.
+We used PlatformIO to flash the ESP32
+
+The code in this directory allows you to command and monitor the ESP32 as follows
+
+# Greenhouse ESP Code Interaction
+
+Broker: `<BROKER_IP>:<PORT>` (default port 1883)
+Set in secrets.h
+
+## Topics
+
+| Topic | Direction | Payload |
+|---|---|---|
+| `greenhouse/<DEVICE_ID>/telemetry` | device → server | `{"temperature":<float>,"humidity":<float>,"photo_volt":<float>,"rpm":<int>,"pwm":<int>,"lamp_level":<int>}` |
+| `greenhouse/<DEVICE_ID>/command` | server → device | `{"pwm_target":<0-255>}`, `{"lamp_level":<0-4>}`, or both combined |
+
+## Variables
+
+| name | sign/constraint | semantics |
+|---|---|---|
+| `temperature` | float, -20 – 60, or `-1` | Degrees Celsius, from onboard DHT11. `-1` means the sensor read failed/invalid this cycle — not a real reading. |
+| `humidity` | float, 0 – 100, or `-1` | Relative humidity %, from onboard DHT11. `-1` means the sensor read failed/invalid this cycle — not a real reading. |
+| `photo_volt` | float, 0 – 3.3, or `-1` | Averaged voltage from the onboard photoresistor divider (ADC). Higher = brighter. `-1` means the reading was invalid (e.g. NaN). |
+| `rpm` | int, ≥ 0 | Fan speed derived from tachometer pulse count. `0` can mean the fan is genuinely stopped, **or** the tach signal isn't being read reliably — don't treat `0` as fully authoritative yet. |
+| `pwm` | int, 0 – 255 | Current fan PWM duty cycle actually applied on the device (not necessarily the last commanded value, if a command failed to apply). `0` = fan off. |
+| `lamp_level` | int, 0 – 4 | Current lamp step level, tracked via simulated button presses. `0` = lamp off/lowest. |
+| `pwm_target` (command) | int, 0 – 255 | Requested fan PWM duty cycle. `0` turns the fan off (power gated off via MOSFET). Device applies this
+`DEVICE_ID` example: `GREENHOUSE1`
+
+## Subscribe to telemetry / watch commands
+
+```bash
+mosquitto_sub -h <BROKER_IP> -p <PORT> -t "greenhouse/<DEVICE_ID>/#" -v
+```
+
+## Publish a command
+
+```bash
+mosquitto_pub -h <BROKER_IP> -p <PORT> -t "greenhouse/<DEVICE_ID>/command" -m '{"pwm_target":100,"lamp_level":1}' -r -q 1
+```
+
+**Always use `-r` (retain).** The device sleeps most of the time and only listens for ~2s per wake cycle; a non-retained command sent while it's asleep is lost. Retained commands are delivered the instant the device reconnects.
+
+Make sure to publish both commands at the same time, as shown in publish a command. if you want to set both variables do not use seperate commands. The latest retained message will overwrite previous commands.
+
+## Clear a pending command manually
+
+```bash
+mosquitto_pub -h <BROKER_IP> -p <PORT> -t "greenhouse/<DEVICE_ID>/command" -n -r
+```
+
+## Behavior notes for endpoint design
+
+- Device wakes every ~60s.
+- If `pwm_target > 0` (fan running), device uses light sleep and stays reachable faster between cycles.
+- If fan is off, device deep-sleeps and fully disconnects/reconnects each cycle.
+- `photo_volt`, `rpm`, `temperature`, `humidity` report `-1` if that sensor read failed/invalid — treat `-1` as "no data," not a real reading.
