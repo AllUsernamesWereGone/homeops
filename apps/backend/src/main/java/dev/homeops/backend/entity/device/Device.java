@@ -51,15 +51,15 @@ public class Device {
     private String displayName;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 40)
+    @Column(nullable = false, length = 40, columnDefinition = "varchar(40)")
     private DeviceType type;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 40)
+    @Column(nullable = false, length = 40, columnDefinition = "varchar(40)")
     private DeviceStatus status = DeviceStatus.UNKNOWN;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 40)
+    @Column(nullable = false, length = 40, columnDefinition = "varchar(40)")
     private DeviceTransport transport = DeviceTransport.UNKNOWN;
 
     @Column(length = 255)
@@ -107,7 +107,12 @@ public class Device {
         }
     )
     @Enumerated(EnumType.STRING)
-    @Column(name = "capability", nullable = false)
+    @Column(
+        name = "capability",
+        nullable = false,
+        length = 128,
+        columnDefinition = "varchar(128)"
+    )
     private Set<DeviceCapability> capabilities = new LinkedHashSet<>();
 
     @PrePersist

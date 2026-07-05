@@ -187,6 +187,36 @@ export class DeviceFormPage implements OnInit {
     });
   }
 
+  isCapabilitySelected(capability: DeviceCapability): boolean {
+    return this.form.controls.capabilities.value.includes(capability);
+  }
+
+  selectedCapabilityCount(): number {
+    return this.form.controls.capabilities.value.length;
+  }
+
+  toggleCapability(capability: DeviceCapability, checked: boolean): void {
+    const currentCapabilities = this.form.controls.capabilities.value;
+
+    const nextCapabilities = checked
+      ? [...currentCapabilities, capability]
+      : currentCapabilities.filter(existingCapability => existingCapability !== capability);
+
+    const orderedCapabilities = this.deviceCapabilities
+      .filter(availableCapability => nextCapabilities.includes(availableCapability));
+
+    this.form.controls.capabilities.setValue(orderedCapabilities);
+    this.form.controls.capabilities.markAsDirty();
+    this.form.controls.capabilities.markAsTouched();
+  }
+
+  formatEnumLabel(value: string): string {
+    return value
+      .toLowerCase()
+      .replaceAll('_', ' ')
+      .replace(/\b\w/g, character => character.toUpperCase());
+  }
+
   private emptyToUndefined(value: string): string | undefined {
     const trimmed = value.trim();
     return trimmed.length === 0 ? undefined : trimmed;

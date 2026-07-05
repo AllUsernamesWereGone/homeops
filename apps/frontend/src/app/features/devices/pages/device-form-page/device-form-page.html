@@ -60,9 +60,23 @@
             </select>
           </label>
 
-          <label class="checkbox-row">
+          <label class="toggle-card" [class.toggle-card--active]="form.controls.enabled.value">
             <input type="checkbox" formControlName="enabled">
-            Enabled
+
+            <span class="toggle-switch" aria-hidden="true">
+              <span></span>
+            </span>
+
+            <span class="toggle-copy">
+              <strong>{{ form.controls.enabled.value ? 'Active' : 'Inactive' }}</strong>
+              <small>
+                {{
+                  form.controls.enabled.value
+                    ? 'Device can receive telemetry and commands.'
+                    : 'Device is disabled and should not be controlled.'
+                }}
+              </small>
+            </span>
           </label>
         }
 
@@ -81,17 +95,44 @@
           <textarea formControlName="description" rows="4"></textarea>
         </label>
 
-        <label class="full-width">
-          Capabilities
-          <select formControlName="capabilities" multiple>
+        <div class="full-width capability-section">
+          <div class="capability-header">
+            <div>
+              <span class="field-title">Capabilities</span>
+              <span class="validation-hint">
+        Select what this device can do. These control which actions appear in the detail view.
+      </span>
+            </div>
+
+            <span class="selected-count">
+      {{ selectedCapabilityCount() }} selected
+    </span>
+          </div>
+
+          <div class="capability-grid">
             @for (capability of deviceCapabilities; track capability) {
-              <option [value]="capability">{{ capability }}</option>
+              <label
+                class="capability-chip"
+                [class.capability-chip--selected]="isCapabilitySelected(capability)"
+              >
+                <input
+                  #capabilityInput
+                  type="checkbox"
+                  [checked]="isCapabilitySelected(capability)"
+                  (change)="toggleCapability(capability, capabilityInput.checked)"
+                >
+
+                <span class="capability-checkmark">
+          @if (isCapabilitySelected(capability)) {
+            ✓
+          }
+        </span>
+
+                <span>{{ formatEnumLabel(capability) }}</span>
+              </label>
             }
-          </select>
-          <span class="validation-hint">
-            Hold Ctrl to select multiple capabilities.
-          </span>
-        </label>
+          </div>
+        </div>
 
         <div class="form-actions">
           <a routerLink="/devices" class="secondary-button">Cancel</a>

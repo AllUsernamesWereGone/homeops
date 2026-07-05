@@ -2,26 +2,13 @@ import {DeviceCapability} from '../../../api/models/device-capability';
 import {DeviceDto} from '../../../api/models/device-dto';
 import {DeviceTelemetryStateDto} from '../../../api/models/device-telemetry-state-dto';
 
-
-export type DeviceControlKind = 'switch' | 'number' | 'action';
-
-export type DeviceControlValue = string | number | boolean | null;
-
-export interface DeviceTelemetryCardVm {
-  key: string;
-  label: string;
-  value: string;
-  unit?: string;
-  description?: string;
-}
-
 export interface DeviceControlVm {
   id: string;
-  kind: DeviceControlKind;
+  kind: 'switch' | 'number';
   label: string;
   target: string;
   property: string;
-  currentValue?: DeviceControlValue;
+  currentValue?: string | number | boolean | null;
   unit?: string;
   min?: number;
   max?: number;
@@ -32,11 +19,13 @@ export interface DeviceControlVm {
 
 export interface DeviceControlChange {
   control: DeviceControlVm;
-  value: DeviceControlValue;
+  value: DeviceControlVm['currentValue'];
 }
 
-const READING_LABELS: Record<string, string> = {
+const TELEMETRY_LABELS: Record<string, string> = {
+  temperature: 'Temperature',
   temperatureC: 'Temperature',
+  humidity: 'Humidity',
   humidityPercent: 'Humidity',
   lightLux: 'Light',
   soilMoisturePercent: 'Soil moisture',
@@ -51,25 +40,46 @@ const READING_LABELS: Record<string, string> = {
   mq2MilliVolts: 'MQ-2 voltage'
 };
 
+const TELEMETRY_UNITS: Record<string, string> = {
+  temperature: 'C',
+  temperatureC: 'C',
+  humidity: '%',
+  humidityPercent: '%',
+  lightLux: 'lux',
+  soilMoisturePercent: '%',
+  wifiRssi: 'dBm',
+  uptimeSeconds: 's',
+  hashrate: 'H/s',
+  fanRpm: 'rpm',
+  powerWatts: 'W',
+  voltageV: 'V',
+  currentA: 'A',
+  mq2MilliVolts: 'mV'
+};
+
 export function buildTelemetryCards(
   state: DeviceTelemetryStateDto | undefined
-): DeviceTelemetryCardVm[] {
-  const readings = getRecord(getStateData(state), 'readings');
+): Array<{ key: string; label: string; value: string; unit?: string; description?: string }> {
+  const telemetry = getTelemetryValues(state);
 
-  return Object.entries(readings)
-    .map(([key, rawReading]) => {
-      const reading = asRecord(rawReading);
-      const value = reading['value'];
-      const unit = asString(reading['unit']);
-
-      if (value === undefined || value === null) {
+  return Object.entries(telemetry)
+    .map(([key, entry]) => {
+      if (entry.value === undefined || entry.value === null) {
         return undefined;
       }
 
-      const card: DeviceTelemetryCardVm = {
+      const unit = entry.unit ?? TELEMETRY_UNITS[key];
+
+      const card: {
+        key: string;
+        label: string;
+        value: string;
+        unit?: string;
+        description?: string;
+      } = {
         key,
-        label: formatReadingLabel(key),
-        value: formatValue(value),
+        label: TELEMETRY_LABELS[key] ?? formatCamelCase(key),
+        value: formatValue(entry.value),
         description: key
       };
 
@@ -79,7 +89,7 @@ export function buildTelemetryCards(
 
       return card;
     })
-    .filter((card): card is DeviceTelemetryCardVm => card !== undefined);
+    .filter(card => card !== undefined);
 }
 
 export function buildControlCards(
@@ -87,60 +97,79 @@ export function buildControlCards(
   state: DeviceTelemetryStateDto | undefined
 ): DeviceControlVm[] {
   const capabilities = new Set<DeviceCapability>(device?.capabilities ?? []);
-  const outputs = getRecord(getStateData(state), 'outputs');
+  const telemetry = getTelemetryValues(state);
+  const data = getStateData(state);
+  const fanOutput = getRecord(getRecord(data, 'outputs'), 'fan1');
+  const lightOutput = getRecord(getRecord(data, 'outputs'), 'light1');
+
   const controls: DeviceControlVm[] = [];
 
-  Object.entries(outputs).forEach(([target, rawOutput]) => {
-    const output = asRecord(rawOutput);
-
-    controls.push(buildSwitchControl(target, asString(output['state']) ?? 'UNKNOWN'));
-
-    const rpm = asNumber(output['rpm']);
-
-    if (rpm !== undefined || target.toLowerCase().includes('fan')) {
-      controls.push(buildFanRpmControl(target, rpm));
-    }
-
-    const speedPercent = asNumber(output['speedPercent']);
-
-    if (speedPercent !== undefined) {
-      controls.push(buildPercentControl(target, 'speedPercent', 'Fan speed', speedPercent));
-    }
-
-    const brightnessPercent = asNumber(output['brightnessPercent']);
-
-    if (brightnessPercent !== undefined) {
-      controls.push(buildPercentControl(target, 'brightnessPercent', 'Brightness', brightnessPercent));
-    }
-  });
-
-  if (controls.length === 0 && capabilities.has('FAN_SWITCH')) {
-    controls.push(buildSwitchControl('fan1', 'UNKNOWN'));
+  if (capabilities.has('FAN_SWITCH')) {
+    controls.push(createSwitchControl(
+      'fan1',
+      asString(fanOutput['state']) ?? 'UNKNOWN'
+    ));
   }
 
-  if (controls.length === 0 && capabilities.has('LIGHT_SWITCH')) {
-    controls.push(buildSwitchControl('light1', 'UNKNOWN'));
+  if (capabilities.has('FAN_RPM_CONTROL')) {
+    controls.push(createFanRpmControl(
+      'fan1',
+      asNumber(fanOutput['rpm']) ?? asNumber(telemetry['fanRpm']?.value)
+    ));
   }
 
-  const fanRpmReading = asRecord(getRecord(getStateData(state), 'readings')['fanRpm']);
-  const fanRpm = asNumber(fanRpmReading['value']);
-
-  if (fanRpm !== undefined && !controls.some(control => control.id === 'fan1-rpm')) {
-    controls.push(buildFanRpmControl('fan1', fanRpm));
+  if (capabilities.has('LIGHT_SWITCH')) {
+    controls.push(createSwitchControl(
+      'light1',
+      asString(lightOutput['state']) ?? 'UNKNOWN'
+    ));
   }
 
   return controls;
 }
 
-function getStateData(state: DeviceTelemetryStateDto | undefined): Record<string, unknown> {
-  return asRecord(state?.data);
+function getTelemetryValues(
+  state: DeviceTelemetryStateDto | undefined
+): Record<string, { value: unknown; unit?: string }> {
+  const data = getStateData(state);
+  const result: Record<string, { value: unknown; unit?: string }> = {};
+
+  for (const [key, value] of Object.entries(data)) {
+    if (key === 'readings' || key === 'outputs') {
+      continue;
+    }
+
+    if (isDisplayableValue(value)) {
+      result[key] = {value};
+    }
+  }
+
+  const readings = getRecord(data, 'readings');
+
+  for (const [key, rawReading] of Object.entries(readings)) {
+    if (isDisplayableValue(rawReading)) {
+      result[key] = {value: rawReading};
+      continue;
+    }
+
+    const reading = asRecord(rawReading);
+    const value = reading['value'];
+
+    if (!isDisplayableValue(value)) {
+      continue;
+    }
+
+    const unit = asString(reading['unit']);
+
+    result[key] = unit === undefined
+      ? {value}
+      : {value, unit};
+  }
+
+  return result;
 }
 
-function getRecord(source: Record<string, unknown>, key: string): Record<string, unknown> {
-  return asRecord(source[key]);
-}
-
-function buildSwitchControl(target: string, state: string): DeviceControlVm {
+function createSwitchControl(target: string, state: string): DeviceControlVm {
   return {
     id: `${target}-state`,
     kind: 'switch',
@@ -153,7 +182,7 @@ function buildSwitchControl(target: string, state: string): DeviceControlVm {
   };
 }
 
-function buildFanRpmControl(target: string, rpm?: number): DeviceControlVm {
+function createFanRpmControl(target: string, rpm?: number): DeviceControlVm {
   return {
     id: `${target}-rpm`,
     kind: 'number',
@@ -166,34 +195,42 @@ function buildFanRpmControl(target: string, rpm?: number): DeviceControlVm {
     max: 5000,
     step: 50,
     command: 'SET_FAN_RPM',
-    description: 'Set a target fan speed. Backend command publishing comes next.'
+    description: 'Set the fan target speed.'
   };
 }
 
-function buildPercentControl(
-  target: string,
-  property: string,
-  label: string,
-  currentValue: number
-): DeviceControlVm {
-  return {
-    id: `${target}-${property}`,
-    kind: 'number',
-    label: `${formatTargetLabel(target)} ${label}`,
-    target,
-    property,
-    currentValue,
-    unit: '%',
-    min: 0,
-    max: 100,
-    step: 5,
-    command: 'SET_OUTPUT_LEVEL',
-    description: 'Set an output level.'
-  };
+function getStateData(state: DeviceTelemetryStateDto | undefined): Record<string, unknown> {
+  return asRecord(state?.data);
 }
 
-function formatReadingLabel(key: string): string {
-  return READING_LABELS[key] ?? formatCamelCase(key);
+function getRecord(source: Record<string, unknown>, key: string): Record<string, unknown> {
+  return asRecord(source[key]);
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+
+  return {};
+}
+
+function asNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+function asString(value: unknown): string | undefined {
+  return typeof value === 'string'
+    ? value
+    : undefined;
+}
+
+function isDisplayableValue(value: unknown): boolean {
+  return typeof value === 'string'
+    || typeof value === 'number'
+    || typeof value === 'boolean';
 }
 
 function formatValue(value: unknown): string {
@@ -221,25 +258,7 @@ function formatTargetLabel(target: string): string {
 function formatCamelCase(value: string): string {
   return value
     .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replaceAll('_', ' ')
+    .replaceAll('-', ' ')
     .replace(/\b\w/g, character => character.toUpperCase());
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-
-  return {};
-}
-
-function asNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? value
-    : undefined;
-}
-
-function asString(value: unknown): string | undefined {
-  return typeof value === 'string'
-    ? value
-    : undefined;
 }
