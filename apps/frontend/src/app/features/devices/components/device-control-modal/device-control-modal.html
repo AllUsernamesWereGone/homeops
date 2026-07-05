@@ -1,0 +1,74 @@
+<div class="modal-backdrop" (click)="cancel.emit()">
+  <section class="modal-card" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <div>
+        <p class="eyebrow">Device Control</p>
+        <h2>{{ control.label }}</h2>
+      </div>
+
+      <button type="button" class="icon-button" (click)="cancel.emit()" aria-label="Close">
+        ×
+      </button>
+    </header>
+
+    @if (control.description) {
+      <p class="modal-description">{{ control.description }}</p>
+    }
+
+    <div class="control-meta">
+      <div>
+        <span>Target</span>
+        <strong>{{ control.target }}</strong>
+      </div>
+
+      <div>
+        <span>Property</span>
+        <strong>{{ control.property }}</strong>
+      </div>
+
+      <div>
+        <span>Command</span>
+        <strong>{{ control.command }}</strong>
+      </div>
+    </div>
+
+    @if (control.kind === 'switch') {
+      <label class="field">
+        Value
+        <select [(ngModel)]="switchDraftValue">
+          <option value="ON">ON</option>
+          <option value="OFF">OFF</option>
+        </select>
+      </label>
+    }
+
+    @if (control.kind === 'number') {
+      <label class="field">
+        Value
+        <div class="number-row">
+          <input
+            type="number"
+            [(ngModel)]="numberDraftValue"
+            [attr.min]="control.min ?? null"
+            [attr.max]="control.max ?? null"
+            [attr.step]="control.step ?? null"
+          >
+
+          @if (control.unit) {
+            <span>{{ control.unit }}</span>
+          }
+        </div>
+      </label>
+    }
+
+    <footer class="modal-actions">
+      <button type="button" class="secondary-button" (click)="cancel.emit()">
+        Cancel
+      </button>
+
+      <button type="button" class="primary-button" (click)="applyChange()">
+        Apply
+      </button>
+    </footer>
+  </section>
+</div>

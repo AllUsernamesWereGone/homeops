@@ -2,12 +2,16 @@ package dev.homeops.backend.basetest;
 
 import dev.homeops.backend.dto.device.DeviceCreateDto;
 import dev.homeops.backend.dto.device.DeviceDto;
+import dev.homeops.backend.dto.device.DeviceTelemetryStateDto;
 import dev.homeops.backend.dto.device.DeviceUpdateDto;
 import dev.homeops.backend.entity.device.Device;
 import dev.homeops.backend.entity.device.DeviceCapability;
 import dev.homeops.backend.entity.device.DeviceStatus;
 import dev.homeops.backend.entity.device.DeviceTransport;
 import dev.homeops.backend.entity.device.DeviceType;
+import dev.homeops.backend.entity.mqtt.MqttMessageType;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
 import java.util.Set;
@@ -167,6 +171,47 @@ public interface TestData {
             TEST_INSTANT,
             TEST_INSTANT,
             0L
+        );
+    }
+
+    static DeviceTelemetryStateDto createGreenhouseTelemetryStateDto() {
+        JsonMapper jsonMapper = new JsonMapper();
+
+        JsonNode data = jsonMapper.readTree("""
+            {
+              "readings": {
+                "temperatureC": {
+                  "value": 24.6,
+                  "unit": "C"
+                },
+                "humidityPercent": {
+                  "value": 63.2,
+                  "unit": "%"
+                },
+                "fanRpm": {
+                  "value": 1200,
+                  "unit": "rpm"
+                }
+              },
+              "outputs": {
+                "fan1": {
+                  "state": "ON",
+                  "rpm": 1200
+                },
+                "light1": {
+                  "state": "OFF"
+                }
+              }
+            }
+            """);
+
+        return new DeviceTelemetryStateDto(
+            DEVICE_ID_GREENHOUSE,
+            MqttMessageType.TELEMETRY,
+            1,
+            TEST_INSTANT,
+            TEST_INSTANT,
+            data
         );
     }
 }
