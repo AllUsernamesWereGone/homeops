@@ -1,5 +1,10 @@
 # Simple ESP controller for a Greenhouse
 
+Project Flashed with Platform.io see code in the corresponding Folder
+
+Schematics for the Project are found in the Schematics Folder
+
+
 Contains:
     - Temperature
     - Humidity

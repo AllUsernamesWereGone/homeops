@@ -33,7 +33,7 @@
 #define PWM_FREQ       25000
 #define PWM_RESOLUTION 8
 
-#define DHT_TYPE DHT11
+#define DHT_TYPE            DHT11
 #define DHT_SAMPLES         5
 #define DHT_SAMPLE_GAP_MS   1000
 #define DHT_MIN_VALID       3
@@ -50,10 +50,11 @@ struct DHTData {
     bool ok;
 };
 
-#define ESP_SLEEP_SECONDS       60
-#define MQTT_COMMAND_WAIT_MS    2000
-#define WIFI_CONNECT_TIMEOUT_MS 6000
-#define TACH_SAMPLE_MS          500
+#define MQTT_SERVICE_INTERVAL_MS    20000
+#define ESP_SLEEP_MS                60000
+#define MQTT_COMMAND_WAIT_MS        2000
+#define WIFI_CONNECT_TIMEOUT_MS     6000
+#define TACH_SAMPLE_MS              500
 
 RTC_DATA_ATTR bool      DEBUG              = true;
 
@@ -337,7 +338,9 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     Serial.println(cmdTargetPwm);
   }
 }
+
 bool connectWiFi() {
+    WiFi.persistent(false);
     WiFi.mode(WIFI_STA);
 
     if (DEBUG) {
@@ -346,6 +349,11 @@ bool connectWiFi() {
         Serial.println(WIFI_SSID);
     }
 
+    // ONLY USE EXPLICIT IP CONFIG
+    // IF RECONNECTION TIME IS AN ISSUE;
+    // IF NOT SET, MAKE SURE WIFI_CONNECT_TIMEOUT_MS
+    // IS SET APPROPRIATELY;
+    // IF MQTTHOST IS A HOSTNAME ADD DNS;
     IPAddress local_IP(192, 168, 50, 29);
     IPAddress gateway(192, 168, 50, 1);
     IPAddress subnet(255, 255, 255, 0);
@@ -422,32 +430,42 @@ bool connectMqtt() {
 }
 
 void publishState(uint32_t rpm, DHTData d, float pv) {
-    StaticJsonDocument<256> doc;
+    StaticJsonDocument<512> doc;
 
-    if (d.ok) {
-        doc["temperature"] = d.temp;
-        doc["humidity"] = d.hum;
-    } else {
-        doc["temperature"] = -1;
-        doc["humidity"] = -1;
+    doc["schemaVersion"] = 1;
+    doc["deviceId"] = DEVICE_ID;
+
+    JsonObject data = doc.createNestedObject("data");
+
+    if (d.ok)
+    {
+        data["temperature"] = d.temp;
+        data["humidity"] = d.hum;
+    }
+    else
+    {
+        data["temperature"] = -1;
+        data["humidity"] = -1;
         if (DEBUG) Serial.println("publishState: DHT invalid, publishing -1");
     }
 
     if (isnan(pv) || pv < 0) {
-        doc["photo_volt"] = -1;
+        data["photo_volt"] = -1;
         if (DEBUG) Serial.println("publishState: photo_volt invalid, publishing -1");
     } else {
-        doc["photo_volt"] = pv;
+        data["photo_volt"] = pv;
     }
 
-    doc["rpm"] = rpm;
-    doc["pwm"] = rtc_pwm_target;
-    doc["lamp_level"] = rtc_lamp_level;
+    data["rpm"] = rpm;
+    data["pwm"] = rtc_pwm_target;
+    data["lamp_level"] = rtc_lamp_level;
 
-    char buf[256];
+    char buf[512];
     size_t len = serializeJson(doc, buf, sizeof(buf));
 
     if (DEBUG) {
+        Serial.println("MQTT Topic:");
+        Serial.println("topicState");
         Serial.println("MQTT payload:");
         Serial.println(buf);
     }
@@ -484,9 +502,24 @@ void setup() {
     loadPersistedState();
     initFanSystem();
 
-    snprintf(topicCmd, sizeof(topicCmd), "greenhouse/%s/command", DEVICE_ID);
-    snprintf(topicState, sizeof(topicState), "greenhouse/%s/telemetry", DEVICE_ID);
+    snprintf(topicCmd, sizeof(topicCmd), "homeops/devices/%s/command", DEVICE_ID);
+    snprintf(topicState, sizeof(topicState), "homeops/devices/%s/telemetry", DEVICE_ID);
 
+}
+
+void enterDeepSleep() {
+    if (mqtt.connected()) mqtt.disconnect();
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+
+    if (DEBUG) {
+        Serial.print("Fan off — entering DEEP sleep for ");
+        Serial.print(ESP_SLEEP_MS);
+        Serial.println("ms");
+        Serial.flush();
+    }
+    esp_sleep_enable_timer_wakeup((uint64_t)ESP_SLEEP_MS * 1000ULL);
+    esp_deep_sleep_start();
 }
 
 void runCycle() {
@@ -517,6 +550,7 @@ void runCycle() {
             mqtt.setServer(MQTT_HOST, MQTT_PORT);
             mqtt.setCallback(onMqttMessage);
             mqtt.setBufferSize(512);
+            mqtt.setKeepAlive(ESP_SLEEP_MS / 500);
             mqttOk = connectMqtt();
 
             if (mqttOk) {
@@ -611,22 +645,18 @@ void loop() {
     runCycle();
 
     if (rtc_pwm_target > 0) {
-        if (DEBUG) {
-            Serial.println("Fan active — staying awake, will re-poll shortly");
-        }
-        delay(ESP_SLEEP_SECONDS * 1000UL);
-    } else {
-        if (mqtt.connected()) mqtt.disconnect();
-        WiFi.disconnect(true);
-        WiFi.mode(WIFI_OFF);
+        if (DEBUG) Serial.println("Fan active — staying awake");
 
-        if (DEBUG) {
-            Serial.print("Fan off — entering DEEP sleep for ");
-            Serial.print(ESP_SLEEP_SECONDS);
-            Serial.println("s");
-            Serial.flush();
+        unsigned long waitStart = millis();
+        while (millis() - waitStart < ESP_SLEEP_MS) {
+            if (mqtt.connected()) {
+                mqtt.loop();
+            } else if (WiFi.status() == WL_CONNECTED) {
+                if (connectMqtt()) mqtt.subscribe(topicCmd);
+            }
+            delay(MQTT_SERVICE_INTERVAL_MS);
         }
-        esp_sleep_enable_timer_wakeup((uint64_t)ESP_SLEEP_SECONDS * 1000000ULL);
-        esp_deep_sleep_start();
+    } else {
+        enterDeepSleep();
     }
 }
