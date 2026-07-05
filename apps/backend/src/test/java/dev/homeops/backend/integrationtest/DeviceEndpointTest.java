@@ -5,6 +5,7 @@ import dev.homeops.backend.dto.device.DeviceCreateDto;
 import dev.homeops.backend.dto.device.DeviceUpdateDto;
 import dev.homeops.backend.endpoint.DeviceEndpoint;
 import dev.homeops.backend.service.DeviceService;
+import dev.homeops.backend.service.DeviceTelemetryStateService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -34,6 +35,10 @@ class DeviceEndpointTest implements TestData {
 
     @MockitoBean
     private DeviceService deviceService;
+
+    @MockitoBean
+    private DeviceTelemetryStateService deviceTelemetryStateService;
+
 
     @Test
     void givenDevices_whenFindAll_thenReturnDevices() throws Exception {
@@ -189,5 +194,19 @@ class DeviceEndpointTest implements TestData {
                     }
                     """))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void givenExistingState_whenFindLatestStateByDeviceId_thenReturnState() throws Exception {
+        when(deviceTelemetryStateService.findLatestByDeviceId(DEVICE_ID_GREENHOUSE))
+            .thenReturn(TestData.createGreenhouseTelemetryStateDto());
+
+        mockMvc.perform(get(DeviceEndpoint.BASE_PATH + "/{deviceId}/state", DEVICE_ID_GREENHOUSE))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.deviceId").value(DEVICE_ID_GREENHOUSE))
+            .andExpect(jsonPath("$.messageType").value("TELEMETRY"))
+            .andExpect(jsonPath("$.schemaVersion").value(1))
+            .andExpect(jsonPath("$.data.readings.temperatureC.value").value(24.6))
+            .andExpect(jsonPath("$.data.readings.temperatureC.unit").value("C"));
     }
 }
