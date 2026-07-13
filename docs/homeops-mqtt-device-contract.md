@@ -1,58 +1,4 @@
-# HomeOps MQTT Device Contract
 
-Last updated: 2026-07-01
-Project: HomeOps
-Purpose: Agreement document for ESP32/Pico firmware, MQTT broker setup, Spring Boot backend integration, and future
-frontend behavior.
-
----
-
-## 1. Goal
-
-HomeOps devices should communicate through MQTT using a stable, versioned message contract.
-
-The main idea is:
-
-```text
-Angular frontend
-  -> Spring Boot backend
-  -> MQTT broker
-  -> ESP32 / Pico / sensors / actuators
-```
-
-The frontend does not talk directly to MQTT devices.
-
-The backend is responsible for:
-
-- device registry
-- validation
-- command creation
-- command history
-- telemetry storage
-- latest state storage
-- MQTT publish/subscribe
-- REST API for Angular
-
-The broker is responsible only for routing MQTT messages.
-
-The device is responsible for:
-
-- connecting to Wi-Fi
-- connecting to MQTT
-- publishing telemetry
-- publishing current state
-- subscribing to commands
-- executing commands
-- publishing command results
-- publishing errors when something fails
-
----
-
-## 2. Things We Need To Agree On
-
-This is the complete agreement checklist between backend, firmware, and infrastructure.
-
----
 
 ## 3. Broker / Network Agreement
 
@@ -146,14 +92,7 @@ Use MQTT 3.1.1 first because most ESP32 libraries support it well.
 
 ---
 
-### 3.5 Quality of Service
 
-MQTT QoS levels:
-
-```text
-QoS 0 = send once, no confirmation
-QoS 1 = at least once, can duplicate
-QoS 2 = exactly once, more overhead
 ```
 
 Recommended first version:
@@ -272,122 +211,6 @@ LWT topic: homeops/devices/{deviceId}/status
 LWT retained: yes
 ```
 
----
-
-## 4. Device Identity Agreement
-
-### 4.1 Device ID Format
-
-Device IDs must be stable and human-readable.
-
-Recommended format:
-
-```text
-lowercase-kebab-case
-```
-
-Examples:
-
-```text
-greenhouse-esp32-01
-rack-fan-controller-01
-pico2w-miner
-antminer-s7
-homeops-pi
-```
-
-Rules:
-
-```text
-Allowed characters: a-z, 0-9, -
-No spaces
-No uppercase letters
-No special characters except dash
-Must not change after first registration
-Must be unique in HomeOps
-```
-
-Decision needed:
-
-```text
-Device ID assigned by: backend / firmware / manual config
-```
-
-Recommendation:
-
-```text
-Manual config first.
-Later backend-assisted provisioning.
-```
-
----
-
-### 4.2 Device Type
-
-Each device should have a type.
-
-Examples:
-
-```text
-SERVER,
-MICROCONTROLLER,
-SENSOR,
-ACTUATOR,
-CAMERA,
-MINER,
-LAPTOP,
-ROUTER,
-OTHER
-ANTMINER_MONITOR
-RASPBERRY_PI
-GENERIC_DEVICE
-```
-
-Decision needed:
-
-```text
-Supported device types for v1:
-- ______________________
-- ______________________
-- ______________________
-```
-
----
-
-### 4.3 Device Capabilities
-
-Capabilities describe what the device can do or measure.
-
-Examples:
-
-```text
-TEMPERATURE_SENSOR,
-HUMIDITY_SENSOR,
-LIGHT_SENSOR,
-FAN_SWITCH,
-LIGHT_SWITCH,
-CAMERA_SNAPSHOT,
-HASHRATE_MONITORING,
-TEMPERATURE_MONITORING,
-CPU_METRICS,
-MEMORY_METRICS,
-DISK_METRICS,
-DOCKER_HOST,
-MQTT_BROKER,
-CI_RUNNER,
-OTHER
-```
-
-Decision needed:
-
-```text
-First device capabilities:
-- ______________________
-- ______________________
-- ______________________
-```
-
----
 
 ## 5. Topic Agreement
 
@@ -414,18 +237,7 @@ homeops/devices/{deviceId}/config
 
 ---
 
-### 5.1 Backend Subscriptions
 
-The Spring Boot backend should subscribe to:
-
-```text
-homeops/devices/+/hello
-homeops/devices/+/status
-homeops/devices/+/telemetry
-homeops/devices/+/state
-homeops/devices/+/command-result
-homeops/devices/+/error
-```
 
 Optional later:
 
@@ -435,13 +247,7 @@ homeops/devices/+/config
 
 ---
 
-### 5.2 Device Subscriptions
 
-Each device subscribes only to its own command topic:
-
-```text
-homeops/devices/{deviceId}/command
-```
 
 Optional later:
 
@@ -453,34 +259,7 @@ Do not make every device subscribe to all commands.
 
 ---
 
-### 5.3 Backend Publications
 
-The backend publishes to:
-
-```text
-homeops/devices/{deviceId}/command
-```
-
-Optional later:
-
-```text
-homeops/devices/{deviceId}/config
-```
-
----
-
-### 5.4 Device Publications
-
-The device publishes to:
-
-```text
-homeops/devices/{deviceId}/hello
-homeops/devices/{deviceId}/status
-homeops/devices/{deviceId}/telemetry
-homeops/devices/{deviceId}/state
-homeops/devices/{deviceId}/command-result
-homeops/devices/{deviceId}/error
-```
 
 ---
 
@@ -493,7 +272,7 @@ All MQTT messages should use the same outer envelope.
   "schemaVersion": 1,
   "messageId": "01HYZQ6M7N8P9Q0R1S2T3U4V5W",
   "correlationId": null,
-  "messageType": "TELEMETRY",
+
   "deviceId": "greenhouse-esp32-01",
   "source": "DEVICE",
   "sentAt": "2026-07-01T18:30:00Z",
@@ -587,13 +366,7 @@ Example:
 2026-07-01T18:30:00Z
 ```
 
-If the device has no valid time yet:
 
-```json
-"sentAt": null
-```
-
-Backend must then use `receivedAt` from server time.
 
 Decision needed:
 
