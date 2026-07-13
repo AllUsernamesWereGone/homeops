@@ -56,11 +56,12 @@ struct DHTData {
 #define WIFI_CONNECT_TIMEOUT_MS     6000
 #define TACH_SAMPLE_MS              500
 
-RTC_DATA_ATTR bool      DEBUG              = true;
+RTC_DATA_ATTR bool      DEBUG       = true;
 
-RTC_DATA_ATTR int8_t    rtc_lamp_level     = 0;
-RTC_DATA_ATTR int8_t    rtc_lamp_target    = 0;
-RTC_DATA_ATTR bool      rtc_lamp_synced    = false;
+RTC_DATA_ATTR int8_t    rtc_last_lamp_level = 0;
+RTC_DATA_ATTR int8_t    rtc_lamp_level      = 0;
+RTC_DATA_ATTR int8_t    rtc_lamp_target     = 0;
+RTC_DATA_ATTR bool      rtc_lamp_synced     = false;
 
 RTC_DATA_ATTR uint8_t   rtc_pwm_target     = 0;
 RTC_DATA_ATTR bool      rtc_fan_pwr        = false;
@@ -87,16 +88,18 @@ char topicState[48];
 void loadPersistedState() {
     prefs.begin("lamp", true);
 
-    rtc_lamp_level   = prefs.getChar("lamp_level", 0);
-    rtc_lamp_target  = prefs.getChar("lamp_target", 0);
-    rtc_pwm_target   = prefs.getUChar("pwm_target", 0);
-    rtc_lamp_synced  = prefs.getBool("lamp_synced", false);
-    rtc_fan_pwr      = prefs.getBool("pwr", false);
+    rtc_last_lamp_level     = prefs.getChar("last_lamp_level", 0);
+    rtc_lamp_level          = prefs.getChar("lamp_level", 0);
+    rtc_lamp_target         = prefs.getChar("lamp_target", 0);
+    rtc_pwm_target          = prefs.getUChar("pwm_target", 0);
+    rtc_lamp_synced         = prefs.getBool("lamp_synced", false);
+    rtc_fan_pwr             = prefs.getBool("pwr", false);
 
     prefs.end();
 
     if (DEBUG) {
         Serial.println("Loaded persisted state:");
+        Serial.print("last_lamp_level: "); Serial.println(rtc_last_lamp_level);
         Serial.print("lamp_level: "); Serial.println(rtc_lamp_level);
         Serial.print("lamp_target: "); Serial.println(rtc_lamp_target);
         Serial.print("pwm_target: "); Serial.println(rtc_pwm_target);
@@ -108,6 +111,7 @@ void loadPersistedState() {
 void savePersistedState() {
     prefs.begin("lamp", false);
 
+    prefs.putChar("last_lamp_level", rtc_last_lamp_level);
     prefs.putChar("lamp_level", rtc_lamp_level);
     prefs.putChar("lamp_target", rtc_lamp_target);
     prefs.putUChar("pwm_target", rtc_pwm_target);
@@ -118,6 +122,7 @@ void savePersistedState() {
 
     if (DEBUG) {
         Serial.println("Saved persisted state:");
+        Serial.print("last_lamp_level: "); Serial.println(rtc_last_lamp_level);
         Serial.print("lamp_level: "); Serial.println(rtc_lamp_level);
         Serial.print("lamp_target: "); Serial.println(rtc_lamp_target);
         Serial.print("pwm_target: "); Serial.println(rtc_pwm_target);
@@ -274,6 +279,14 @@ void pulseButton() {
     if (DEBUG) {
         Serial.println("Button pressed");
     }
+}
+
+bool confirmLightLevel(){
+
+}
+
+bool syncButton() {
+
 }
 
 void onMqttMessage(char* topic, byte* payload, unsigned int length) {

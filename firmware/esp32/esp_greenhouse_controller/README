@@ -42,6 +42,25 @@ Set in secrets.h
 | `pwm_target` (command) | int, 0 – 255 | Requested fan PWM duty cycle. `0` turns the fan off (power gated off via MOSFET). Device applies this
 `DEVICE_ID` example: `GREENHOUSE1`
 
+## Json Structure
+
+Below you will find an example of a Json Payload
+
+```json
+{
+  "schemaVersion": 1,
+  "deviceId": "<DEVICE_ID>",
+  "data": {
+    "temperature": 23.4,
+    "humidity": 45.8,
+    "photo_volt": 1.82,
+    "rpm": 1250,
+    "pwm": 180,
+    "lamp_level": 2
+  }
+}
+```
+
 ## Subscribe to telemetry / watch commands
 
 ```bash
