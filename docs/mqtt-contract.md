@@ -102,19 +102,25 @@ homeops/devices/{deviceId}/error
 
 All MQTT messages should use the same outer envelope.
 
+
+### 3.1 Schema Version 1
 ```json
 {
-  "deviceId": "greenhouse-esp32-01",
-  "messageType": "TELEMETRY",
-  "sentAt": "2026-07-01T18:30:00Z",
+  "schemaVersion": 1,
+  "deviceId": "<DEVICE_ID>",
   "data": {}
 }
 ```
 
-If the device has no valid time yet:
-
+### 3.2 Schema Version 2
 ```json
-"sentAt": null
+{
+  "schemaVersion": 2,
+  "deviceId": "<DEVICE_ID>",
+  "TBD": null,
+  "TBD": null,
+  "TBD": null,
+  "data": {}
+}
 ```
 
-Backend must then use `receivedAt` from server time.
