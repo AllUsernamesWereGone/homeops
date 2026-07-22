@@ -58,6 +58,10 @@ struct DHTData {
 
 RTC_DATA_ATTR bool      DEBUG       = true;
 
+constexpr int SYNCPULSES = 10;
+constexpr int LAMPCYCLES = 8;
+constexpr float SYNC_TOLERANCE_VOLTS = 0.05f;
+
 RTC_DATA_ATTR int8_t    rtc_last_lamp_level = 0;
 RTC_DATA_ATTR int8_t    rtc_lamp_level      = 0;
 RTC_DATA_ATTR int8_t    rtc_lamp_target     = 0;
@@ -270,23 +274,88 @@ void initFanSystem() {
     setFanState(rtc_fan_pwr ? rtc_pwm_target : 0);
 }
 
-void pulseButton() {
+float pulseButton() {
     digitalWrite(PIN_BUTTON_SIM, HIGH);
     delay(BUTTON_PULSE_MS);
+
     digitalWrite(PIN_BUTTON_SIM, LOW);
     delay(BUTTON_SETTLE_MS);
 
+    float photoVolts = readPhotoVolts();
+
     if (DEBUG) {
         Serial.println("Button pressed");
+        Serial.print("Photoresistor voltage: ");
+        Serial.println(photoVolts);
     }
+
+    return photoVolts;
 }
 
-bool confirmLightLevel(){
-
-}
 
 bool syncButton() {
+    float syncLightLevels[SYNCPULSES + 1];
 
+    syncLightLevels[0] = readPhotoVolts();
+
+    float lowestVoltage = syncLightLevels[0];
+    int lowestSampleIndex = 0;
+
+    for (int i = 0; i < SYNCPULSES; i++) {
+        float voltage = pulseButton();
+
+        syncLightLevels[i + 1] = voltage;
+
+        if (voltage < lowestVoltage) {
+            lowestVoltage = voltage;
+            lowestSampleIndex = i + 1;
+        }
+    }
+
+    int additionalPulses =
+        (lowestSampleIndex - SYNCPULSES) % LAMPCYCLES;
+
+    if (additionalPulses < 0) {
+        additionalPulses += LAMPCYCLES;
+    }
+
+    if (DEBUG) {
+        Serial.print("Lowest voltage: ");
+        Serial.println(lowestVoltage);
+
+        Serial.print("Lowest sample index: ");
+        Serial.println(lowestSampleIndex);
+
+        Serial.print("Additional pulses required: ");
+        Serial.println(additionalPulses);
+    }
+
+    float finalVoltage = syncLightLevels[SYNCPULSES];
+
+    for (int i = 0; i < additionalPulses; i++) {
+        finalVoltage = pulseButton();
+    }
+
+    bool synced =
+        fabsf(finalVoltage - lowestVoltage) <= SYNC_TOLERANCE_VOLTS;
+
+    if (synced) {
+        rtc_last_lamp_level = 1;
+        rtc_lamp_level = 0;
+    }
+
+    if (DEBUG) {
+        Serial.print("Final voltage: ");
+        Serial.println(finalVoltage);
+
+        Serial.print("Difference from detected minimum: ");
+        Serial.println(fabsf(finalVoltage - lowestVoltage));
+
+        Serial.print("Sync successful: ");
+        Serial.println(synced ? "yes" : "no");
+    }
+
+    return synced;
 }
 
 void onMqttMessage(char* topic, byte* payload, unsigned int length) {
@@ -630,10 +699,11 @@ void runCycle() {
             Serial.println(steps);
         } 
         
+
         //actual Stepping Logic Incomplete, TODO
 
         for (int i = 0; i < steps; i++) {
-            pulseButton();
+            float change = pulseButton();
         }
 
         rtc_lamp_level  = cmdTargetLevel;
