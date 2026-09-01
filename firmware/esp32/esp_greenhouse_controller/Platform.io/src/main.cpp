@@ -7,6 +7,9 @@
 #include <WiFiUdp.h>
 #include <esp_sleep.h>
 #include <esp_wifi.h>
+#if __has_include(<esp_arduino_version.h>)
+#include <esp_arduino_version.h>
+#endif
 #include "secrets.h"
 #include <ArduinoJson.h>
 
@@ -15,23 +18,25 @@
 #define PIN_FAN_PWR     27
 #define PIN_PHOTO_SENSE 32
 #define PIN_DHT_SENSE   25
-#define PIN_BUTTON_SIM  19
-
-#define BUTTON_PULSE_MS     150
-#define BUTTON_SETTLE_MS    250
+#define PIN_LED_PWM     19
 
 #define PHOTO_SAMPLES       10
 #define PHOTO_SAMPLE_GAP_MS 50
-#define PHOTO_DELTA_THRESH  0.15f
 
 #define LAMP_LEVEL_MIN  0
 #define LAMP_LEVEL_MAX  4
-#define PWM_TARGET_MIN  0
-#define PWM_TARGET_MAX  255
+#define FAN_PWM_TARGET_MIN  0
+#define FAN_PWM_TARGET_MAX  255
+#define LED_PWM_TARGET_MIN  0
+#define LED_PWM_TARGET_MAX  255
 
-#define PWM_CHANNEL    0
-#define PWM_FREQ       25000
-#define PWM_RESOLUTION 8
+#define FAN_PWM_CHANNEL     0
+#define FAN_PWM_FREQ        25000
+#define LED_PWM_CHANNEL     2
+#define LED_PWM_FREQ        2000
+#define PWM_RESOLUTION      8
+
+constexpr bool LED_PWM_ACTIVE_HIGH = true;
 
 #define DHT_TYPE            DHT11
 #define DHT_SAMPLES         5
@@ -58,18 +63,11 @@ struct DHTData {
 
 RTC_DATA_ATTR bool      DEBUG       = true;
 
-constexpr int SYNCPULSES = 10;
-constexpr int LAMPCYCLES = 8;
-constexpr float SYNC_TOLERANCE_VOLTS = 0.05f;
-
-RTC_DATA_ATTR int8_t    rtc_last_lamp_level = 0;
-RTC_DATA_ATTR int8_t    rtc_lamp_level      = 0;
-RTC_DATA_ATTR int8_t    rtc_lamp_target     = 0;
-RTC_DATA_ATTR bool      rtc_lamp_synced     = false;
-
-RTC_DATA_ATTR uint8_t   rtc_pwm_target     = 0;
-RTC_DATA_ATTR bool      rtc_fan_pwr        = false;
-RTC_DATA_ATTR uint32_t  rtc_boot_count     = 0;
+RTC_DATA_ATTR uint8_t   rtc_lamp_level       = 0;
+RTC_DATA_ATTR uint8_t   rtc_led_pwm_target   = 0;
+RTC_DATA_ATTR uint8_t   rtc_fan_pwm_target   = 0;
+RTC_DATA_ATTR bool      rtc_fan_pwr          = false;
+RTC_DATA_ATTR uint32_t  rtc_boot_count       = 0;
 
 Preferences prefs;
 
@@ -84,30 +82,61 @@ volatile uint32_t tachPulseCount = 0;
 void IRAM_ATTR onTachPulse() { tachPulseCount++; }
 
 int16_t cmdTargetLevel = -1;
-int16_t cmdTargetPwm   = -1;
+int16_t cmdTargetFanPwm = -1;
+int16_t cmdTargetLedPwm = -1;
 
 char topicCmd[48];
 char topicState[48];
 
+uint8_t lampLevelToLedPwm(uint8_t level) {
+    level = constrain(level, LAMP_LEVEL_MIN, LAMP_LEVEL_MAX);
+    return (uint8_t)(((uint16_t)level * LED_PWM_TARGET_MAX +
+                      (LAMP_LEVEL_MAX / 2)) / LAMP_LEVEL_MAX);
+}
+
+uint8_t ledPwmToLampLevel(uint8_t pwmTarget) {
+    return (uint8_t)(((uint16_t)pwmTarget * LAMP_LEVEL_MAX +
+                      (LED_PWM_TARGET_MAX / 2)) / LED_PWM_TARGET_MAX);
+}
+
+bool attachPwmPin(uint8_t pin, uint8_t channel, uint32_t frequency) {
+#if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
+    return ledcAttachChannel(pin, frequency, PWM_RESOLUTION, channel);
+#else
+    if (ledcSetup(channel, frequency, PWM_RESOLUTION) == 0) return false;
+    ledcAttachPin(pin, channel);
+    return true;
+#endif
+}
+
+void writePwmDuty(uint8_t pin, uint8_t channel, uint8_t duty) {
+#if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
+    (void)channel;
+    ledcWrite(pin, duty);
+#else
+    (void)pin;
+    ledcWrite(channel, duty);
+#endif
+}
+
 void loadPersistedState() {
     prefs.begin("lamp", true);
 
-    rtc_last_lamp_level     = prefs.getChar("last_lamp_level", 0);
-    rtc_lamp_level          = prefs.getChar("lamp_level", 0);
-    rtc_lamp_target         = prefs.getChar("lamp_target", 0);
-    rtc_pwm_target          = prefs.getUChar("pwm_target", 0);
-    rtc_lamp_synced         = prefs.getBool("lamp_synced", false);
-    rtc_fan_pwr             = prefs.getBool("pwr", false);
+    int persistedLampLevel = prefs.getChar("lamp_level", 0);
+    rtc_lamp_level = (uint8_t)constrain(
+        persistedLampLevel, LAMP_LEVEL_MIN, LAMP_LEVEL_MAX);
+    rtc_led_pwm_target = prefs.getUChar(
+        "led_pwm", lampLevelToLedPwm(rtc_lamp_level));
+    rtc_fan_pwm_target = prefs.getUChar("pwm_target", 0);
+    rtc_fan_pwr = prefs.getBool("pwr", false);
 
     prefs.end();
 
     if (DEBUG) {
         Serial.println("Loaded persisted state:");
-        Serial.print("last_lamp_level: "); Serial.println(rtc_last_lamp_level);
         Serial.print("lamp_level: "); Serial.println(rtc_lamp_level);
-        Serial.print("lamp_target: "); Serial.println(rtc_lamp_target);
-        Serial.print("pwm_target: "); Serial.println(rtc_pwm_target);
-        Serial.print("lamp_synced: "); Serial.println(rtc_lamp_synced);
+        Serial.print("led_pwm_target: "); Serial.println(rtc_led_pwm_target);
+        Serial.print("fan_pwm_target: "); Serial.println(rtc_fan_pwm_target);
         Serial.print("fan_pwr: "); Serial.println(rtc_fan_pwr);
     }
 }
@@ -115,22 +144,18 @@ void loadPersistedState() {
 void savePersistedState() {
     prefs.begin("lamp", false);
 
-    prefs.putChar("last_lamp_level", rtc_last_lamp_level);
-    prefs.putChar("lamp_level", rtc_lamp_level);
-    prefs.putChar("lamp_target", rtc_lamp_target);
-    prefs.putUChar("pwm_target", rtc_pwm_target);
-    prefs.putBool("lamp_synced", rtc_lamp_synced);
+    prefs.putChar("lamp_level", (int8_t)rtc_lamp_level);
+    prefs.putUChar("led_pwm", rtc_led_pwm_target);
+    prefs.putUChar("pwm_target", rtc_fan_pwm_target);
     prefs.putBool("pwr", rtc_fan_pwr);
 
     prefs.end();
 
     if (DEBUG) {
         Serial.println("Saved persisted state:");
-        Serial.print("last_lamp_level: "); Serial.println(rtc_last_lamp_level);
         Serial.print("lamp_level: "); Serial.println(rtc_lamp_level);
-        Serial.print("lamp_target: "); Serial.println(rtc_lamp_target);
-        Serial.print("pwm_target: "); Serial.println(rtc_pwm_target);
-        Serial.print("lamp_synced: "); Serial.println(rtc_lamp_synced);
+        Serial.print("led_pwm_target: "); Serial.println(rtc_led_pwm_target);
+        Serial.print("fan_pwm_target: "); Serial.println(rtc_fan_pwm_target);
         Serial.print("fan_pwr: "); Serial.println(rtc_fan_pwr);
     }
 }
@@ -223,28 +248,29 @@ uint32_t sampleTachRPM() {
     return rpm;
 }
 
-uint32_t setFanState(uint8_t pwm_target) {
+uint32_t setFanState(uint8_t pwmTarget) {
 
-    if (pwm_target == 0) {
+    if (pwmTarget == 0) {
         rtc_fan_pwr = false;
-        rtc_pwm_target = 0;
+        rtc_fan_pwm_target = 0;
         digitalWrite(PIN_FAN_PWR, LOW);
-        ledcWrite(PWM_CHANNEL, 255);
+        writePwmDuty(PIN_FAN_PWM, FAN_PWM_CHANNEL, 255);
     } else {
-        pwm_target = constrain(pwm_target, 1, 255);
+        pwmTarget = constrain(pwmTarget, 1, FAN_PWM_TARGET_MAX);
 
         bool wasOff = !rtc_fan_pwr;
 
         rtc_fan_pwr = true;
-        rtc_pwm_target = pwm_target;
+        rtc_fan_pwm_target = pwmTarget;
         digitalWrite(PIN_FAN_PWR, HIGH);
 
         if (wasOff) {
-            ledcWrite(PWM_CHANNEL, 0);
+            writePwmDuty(PIN_FAN_PWM, FAN_PWM_CHANNEL, 0);
             delay(300);
         }
 
-        ledcWrite(PWM_CHANNEL, 255 - pwm_target);
+        writePwmDuty(PIN_FAN_PWM, FAN_PWM_CHANNEL,
+                     FAN_PWM_TARGET_MAX - pwmTarget);
     }
 
     delay(300);
@@ -253,7 +279,7 @@ uint32_t setFanState(uint8_t pwm_target) {
     if (DEBUG) {
         Serial.println("=== FAN STATE SET ===");
         Serial.print("Target PWM: ");
-        Serial.println(pwm_target);
+        Serial.println(pwmTarget);
         Serial.print("Actual RPM: ");
         Serial.println(rpm);
     }
@@ -262,104 +288,69 @@ uint32_t setFanState(uint8_t pwm_target) {
 }
 
 void initFanSystem() {
-    ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
-    ledcAttachPin(PIN_FAN_PWM, PWM_CHANNEL);
+    bool attached = attachPwmPin(PIN_FAN_PWM, FAN_PWM_CHANNEL, FAN_PWM_FREQ);
 
     if (DEBUG) {
         Serial.println("=== FAN BOOT INIT ===");
+        Serial.print("PWM attach: ");
+        Serial.println(attached ? "OK" : "FAILED");
         Serial.print("Restoring RTC PWM target: ");
-        Serial.println(rtc_pwm_target);
+        Serial.println(rtc_fan_pwm_target);
     }
 
-    setFanState(rtc_fan_pwr ? rtc_pwm_target : 0);
+    setFanState(rtc_fan_pwr ? rtc_fan_pwm_target : 0);
 }
 
-float pulseButton() {
-    digitalWrite(PIN_BUTTON_SIM, HIGH);
-    delay(BUTTON_PULSE_MS);
-
-    digitalWrite(PIN_BUTTON_SIM, LOW);
-    delay(BUTTON_SETTLE_MS);
-
-    float photoVolts = readPhotoVolts();
-
-    if (DEBUG) {
-        Serial.println("Button pressed");
-        Serial.print("Photoresistor voltage: ");
-        Serial.println(photoVolts);
-    }
-
-    return photoVolts;
+void writeLedPwm(uint8_t pwmTarget) {
+    uint8_t outputDuty = LED_PWM_ACTIVE_HIGH
+        ? pwmTarget
+        : (LED_PWM_TARGET_MAX - pwmTarget);
+    writePwmDuty(PIN_LED_PWM, LED_PWM_CHANNEL, outputDuty);
 }
 
-
-bool syncButton() {
-    float syncLightLevels[SYNCPULSES + 1];
-
-    syncLightLevels[0] = readPhotoVolts();
-
-    float lowestVoltage = syncLightLevels[0];
-    int lowestSampleIndex = 0;
-
-    for (int i = 0; i < SYNCPULSES; i++) {
-        float voltage = pulseButton();
-
-        syncLightLevels[i + 1] = voltage;
-
-        if (voltage < lowestVoltage) {
-            lowestVoltage = voltage;
-            lowestSampleIndex = i + 1;
-        }
-    }
-
-    int additionalPulses =
-        (lowestSampleIndex - SYNCPULSES) % LAMPCYCLES;
-
-    if (additionalPulses < 0) {
-        additionalPulses += LAMPCYCLES;
-    }
+void setLedPwmTarget(uint8_t pwmTarget) {
+    rtc_led_pwm_target = pwmTarget;
+    rtc_lamp_level = ledPwmToLampLevel(pwmTarget);
+    writeLedPwm(pwmTarget);
 
     if (DEBUG) {
-        Serial.print("Lowest voltage: ");
-        Serial.println(lowestVoltage);
-
-        Serial.print("Lowest sample index: ");
-        Serial.println(lowestSampleIndex);
-
-        Serial.print("Additional pulses required: ");
-        Serial.println(additionalPulses);
+        Serial.println("=== LED STATE SET ===");
+        Serial.print("LED PWM target: ");
+        Serial.println(rtc_led_pwm_target);
+        Serial.print("Equivalent lamp level: ");
+        Serial.println(rtc_lamp_level);
     }
+}
 
-    float finalVoltage = syncLightLevels[SYNCPULSES];
-
-    for (int i = 0; i < additionalPulses; i++) {
-        finalVoltage = pulseButton();
-    }
-
-    bool synced =
-        fabsf(finalVoltage - lowestVoltage) <= SYNC_TOLERANCE_VOLTS;
-
-    if (synced) {
-        rtc_last_lamp_level = 1;
-        rtc_lamp_level = 0;
-    }
+void setLampLevel(uint8_t level) {
+    level = constrain(level, LAMP_LEVEL_MIN, LAMP_LEVEL_MAX);
+    rtc_lamp_level = level;
+    rtc_led_pwm_target = lampLevelToLedPwm(level);
+    writeLedPwm(rtc_led_pwm_target);
 
     if (DEBUG) {
-        Serial.print("Final voltage: ");
-        Serial.println(finalVoltage);
+        Serial.println("=== LED STATE SET ===");
+        Serial.print("Lamp level: ");
+        Serial.println(rtc_lamp_level);
+        Serial.print("LED PWM target: ");
+        Serial.println(rtc_led_pwm_target);
+    }
+}
 
-        Serial.print("Difference from detected minimum: ");
-        Serial.println(fabsf(finalVoltage - lowestVoltage));
+void initLedSystem() {
+    bool attached = attachPwmPin(PIN_LED_PWM, LED_PWM_CHANNEL, LED_PWM_FREQ);
 
-        Serial.print("Sync successful: ");
-        Serial.println(synced ? "yes" : "no");
+    if (DEBUG) {
+        Serial.print("LED PWM attach: ");
+        Serial.println(attached ? "OK" : "FAILED");
     }
 
-    return synced;
+    setLedPwmTarget(rtc_led_pwm_target);
 }
 
 void onMqttMessage(char* topic, byte* payload, unsigned int length) {
-  StaticJsonDocument<192> doc;
+  (void)topic;
+  StaticJsonDocument<256> doc;
   DeserializationError err = deserializeJson(doc, payload, length);
 
   if (err) {
@@ -396,19 +387,39 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     JsonVariant v = doc["pwm_target"];
     if (v.is<int>()) {
       int val = v.as<int>();
-      if (val >= PWM_TARGET_MIN && val <= PWM_TARGET_MAX) {
-        cmdTargetPwm = val;
+      if (val >= FAN_PWM_TARGET_MIN && val <= FAN_PWM_TARGET_MAX) {
+        cmdTargetFanPwm = val;
         updated = true;
       } else {
-        cmdTargetPwm = -1;
+        cmdTargetFanPwm = -1;
         if (DEBUG) {
           Serial.print("pwm_target out of range, rejected: ");
           Serial.println(val);
         }
       }
     } else {
-      cmdTargetPwm = -1;
+      cmdTargetFanPwm = -1;
       if (DEBUG) Serial.println("Parsing JSON pwm_target: wrong type, ignoring");
+    }
+  }
+
+  if (doc.containsKey("led_pwm_target")) {
+    JsonVariant v = doc["led_pwm_target"];
+    if (v.is<int>()) {
+      int val = v.as<int>();
+      if (val >= LED_PWM_TARGET_MIN && val <= LED_PWM_TARGET_MAX) {
+        cmdTargetLedPwm = val;
+        updated = true;
+      } else {
+        cmdTargetLedPwm = -1;
+        if (DEBUG) {
+          Serial.print("led_pwm_target out of range, rejected: ");
+          Serial.println(val);
+        }
+      }
+    } else {
+      cmdTargetLedPwm = -1;
+      if (DEBUG) Serial.println("Parsing JSON led_pwm_target: wrong type, ignoring");
     }
   }
 
@@ -416,8 +427,10 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     Serial.println("MQTT command parsed:");
     Serial.print("lamp_level: ");
     Serial.println(cmdTargetLevel);
-    Serial.print("pwm_target: ");
-    Serial.println(cmdTargetPwm);
+    Serial.print("fan pwm_target: ");
+    Serial.println(cmdTargetFanPwm);
+    Serial.print("led_pwm_target: ");
+    Serial.println(cmdTargetLedPwm);
   }
 }
 
@@ -539,7 +552,9 @@ void publishState(uint32_t rpm, DHTData d, float pv) {
     }
 
     data["rpm"] = rpm;
-    data["pwm"] = rtc_pwm_target;
+    data["pwm"] = rtc_fan_pwm_target;
+    data["fan_pwm"] = rtc_fan_pwm_target;
+    data["led_pwm"] = rtc_led_pwm_target;
     data["lamp_level"] = rtc_lamp_level;
 
     char buf[512];
@@ -565,9 +580,9 @@ void setup() {
 
     pinMode(PIN_FAN_SENSE, INPUT_PULLUP);
     pinMode(PIN_FAN_PWR, OUTPUT);
-    pinMode(PIN_BUTTON_SIM, OUTPUT);
+    pinMode(PIN_LED_PWM, OUTPUT);
     digitalWrite(PIN_FAN_PWR, LOW);
-    digitalWrite(PIN_BUTTON_SIM, LOW);
+    digitalWrite(PIN_LED_PWM, LED_PWM_ACTIVE_HIGH ? LOW : HIGH);
 
     attachInterrupt(digitalPinToInterrupt(PIN_FAN_SENSE), onTachPulse, FALLING);
 
@@ -583,6 +598,7 @@ void setup() {
 
     loadPersistedState();
     initFanSystem();
+    initLedSystem();
 
     snprintf(topicCmd, sizeof(topicCmd), "homeops/devices/%s/command", DEVICE_ID);
     snprintf(topicState, sizeof(topicState), "homeops/devices/%s/telemetry", DEVICE_ID);
@@ -595,7 +611,7 @@ void enterDeepSleep() {
     WiFi.mode(WIFI_OFF);
 
     if (DEBUG) {
-        Serial.print("Fan off — entering DEEP sleep for ");
+        Serial.print("PWM outputs off — entering DEEP sleep for ");
         Serial.print(ESP_SLEEP_MS);
         Serial.println("ms");
         Serial.flush();
@@ -663,9 +679,6 @@ void runCycle() {
         publishState(rpm, dhtData, photoVolts);
     }
 
-    cmdTargetLevel = -1;
-    cmdTargetPwm   = -1;
-
     if (mqttOk) {
         if (DEBUG) Serial.println("Waiting for MQTT command...");
 
@@ -676,59 +689,72 @@ void runCycle() {
         }
     }
 
+    bool commandHandled = cmdTargetLevel >= 0 ||
+                          cmdTargetFanPwm >= 0 ||
+                          cmdTargetLedPwm >= 0;
     bool stateChanged = false;
 
-    if (cmdTargetPwm >= 0) {
+    if (cmdTargetFanPwm >= 0) {
         if (DEBUG) {
             Serial.print("Applying pwm_target command: ");
-            Serial.println(cmdTargetPwm);
+            Serial.println(cmdTargetFanPwm);
         }
-        rpm = setFanState((uint8_t)cmdTargetPwm);
-        stateChanged = true;
+        if (cmdTargetFanPwm != rtc_fan_pwm_target ||
+            (cmdTargetFanPwm > 0) != rtc_fan_pwr) {
+            rpm = setFanState((uint8_t)cmdTargetFanPwm);
+            stateChanged = true;
+        }
     }
 
-    if (cmdTargetLevel >= 0 && cmdTargetLevel != rtc_lamp_level) {
-        int steps = abs((int)cmdTargetLevel - (int)rtc_lamp_level);
-
+    if (cmdTargetLedPwm >= 0) {
         if (DEBUG) {
-            Serial.print("Applying lamp_level command: ");
-            Serial.print(rtc_lamp_level);
-            Serial.print(" -> ");
-            Serial.println(cmdTargetLevel);
-            Serial.print("Button presses needed: ");
-            Serial.println(steps);
-        } 
-        
-
-        //actual Stepping Logic Incomplete, TODO
-
-        for (int i = 0; i < steps; i++) {
-            float change = pulseButton();
+            Serial.print("Applying led_pwm_target command: ");
+            Serial.println(cmdTargetLedPwm);
         }
+        if (cmdTargetLedPwm != rtc_led_pwm_target) {
+            setLedPwmTarget((uint8_t)cmdTargetLedPwm);
+            stateChanged = true;
+        }
+    } else if (cmdTargetLevel >= 0) {
+        uint8_t requestedLedPwm = lampLevelToLedPwm((uint8_t)cmdTargetLevel);
+        if (cmdTargetLevel != rtc_lamp_level ||
+            requestedLedPwm != rtc_led_pwm_target) {
+            if (DEBUG) {
+                Serial.print("Applying lamp_level command: ");
+                Serial.print(rtc_lamp_level);
+                Serial.print(" -> ");
+                Serial.println(cmdTargetLevel);
+            }
 
-        rtc_lamp_level  = cmdTargetLevel;
-        rtc_lamp_target = cmdTargetLevel;
-        rtc_lamp_synced = true;
-        stateChanged = true;
+            setLampLevel((uint8_t)cmdTargetLevel);
+            stateChanged = true;
+        }
     }
+
+    cmdTargetLevel = -1;
+    cmdTargetFanPwm = -1;
+    cmdTargetLedPwm = -1;
 
     if (stateChanged) {
         savePersistedState();
 
         if (mqttOk) {
-            mqtt.publish(topicCmd, "", true);
             publishState(rpm, dhtData, photoVolts);
         }
     } else if (DEBUG) {
         Serial.println("No command applied, nothing to persist");
+    }
+
+    if (mqttOk && commandHandled) {
+        mqtt.publish(topicCmd, "", true);
     }
 }
 
 void loop() {
     runCycle();
 
-    if (rtc_pwm_target > 0) {
-        if (DEBUG) Serial.println("Fan active — staying awake");
+    if (rtc_fan_pwm_target > 0 || rtc_led_pwm_target > 0) {
+        if (DEBUG) Serial.println("PWM output active — staying awake");
 
         unsigned long waitStart = millis();
         while (millis() - waitStart < ESP_SLEEP_MS) {
@@ -737,6 +763,14 @@ void loop() {
             } else if (WiFi.status() == WL_CONNECTED) {
                 if (connectMqtt()) mqtt.subscribe(topicCmd);
             }
+
+            if (cmdTargetLevel >= 0 ||
+                cmdTargetFanPwm >= 0 ||
+                cmdTargetLedPwm >= 0) {
+                if (DEBUG) Serial.println("Command received — ending service wait");
+                break;
+            }
+
             delay(MQTT_SERVICE_INTERVAL_MS);
         }
     } else {
