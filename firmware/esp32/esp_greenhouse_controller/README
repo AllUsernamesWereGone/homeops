@@ -2,9 +2,6 @@
 
 Project Flashed with Platform.io see code in the corresponding Folder
 
-Schematics for the Project are found in the Schematics Folder
-
-
 Contains:
     - Temperature
     - Humidity
@@ -12,7 +9,6 @@ Contains:
     - PWM Fan Control
     - Grow Lamp Button Automation
 
-See Schematics for parts used.
 We used PlatformIO to flash the ESP32
 
 The code in this directory allows you to command and monitor the ESP32 as follows
