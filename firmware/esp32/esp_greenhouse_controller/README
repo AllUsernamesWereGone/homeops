@@ -1,87 +1,434 @@
-# Simple ESP controller for a Greenhouse
+# ESP32 Controller for a Greenhouse
 
-Project Flashed with Platform.io see code in the corresponding Folder
+ESP32 greenhouse controller built and flashed with PlatformIO.
 
 Contains:
-    - Temperature
-    - Humidity
-    - Light Level
-    - PWM Fan Control
-    - Grow Lamp Button Automation
 
-We used PlatformIO to flash the ESP32
+- Temperature measurement
+- Humidity measurement
+- Light-level measurement
+- PWM fan control
+- Fan RPM monitoring
+- PWM grow-lamp control
+- Wi-Fi and MQTT communication
+- Optional MQTT over TLS
+- UTC timestamps in MQTT telemetry
+- Automatic deep sleep when fan and lamp are both off
 
-The code in this directory allows you to command and monitor the ESP32 as follows
 
-# Greenhouse ESP Code Interaction
+## Project layout
 
-Broker: `<BROKER_IP>:<PORT>` (default port 1883)
-Set in secrets.h
+```text
+greenhouse_esp32_controller/
+├── platformio.ini
+├── README.md
+├── include/
+│   ├── secrets.h
+│   ├── AppConfig.h
+│   ├── FanController.h
+│   ├── GreenhouseController.h
+│   ├── HardwareConfig.h
+│   ├── LampController.h
+│   ├── MqttManager.h
+│   ├── NetworkManager.h
+│   ├── PowerManager.h
+│   ├── RtcState.h
+│   ├── SensorManager.h
+│   └── SystemTypes.h
+├── src/
+│   ├── main.cpp
+│   ├── AppConfig.cpp
+│   ├── FanController.cpp
+│   ├── GreenhouseController.cpp
+│   ├── LampController.cpp
+│   ├── MqttManager.cpp
+│   ├── NetworkManager.cpp
+│   ├── PowerManager.cpp
+│   ├── RtcState.cpp
+│   └── SensorManager.cpp
+└── data/
+    ├── .env
+    └── mqtt_ca.pem        # add your certificate when TLS is enabled
+```
 
-## Topics
+`mqtt_ca.pem` is intentionally not included. Add the real CA/self-signed broker certificate to `data/mqtt_ca.pem` before uploading LittleFS when TLS is enabled.
 
-| Topic | Direction | Payload |
+## Build and upload
+
+The project targets Arduino-ESP32 3.3.11 using the PIOArduino PlatformIO platform.
+
+Firmware:
+
+```bash
+pio run -t upload
+```
+
+LittleFS configuration and TLS certificate:
+
+```bash
+pio run -t uploadfs
+```
+
+Serial monitor when debug mode is enabled:
+
+```bash
+pio device monitor
+```
+
+If your board is not a generic ESP32 Dev Module, change `board = esp32dev` in `platformio.ini` to the correct PlatformIO board ID.
+
+## `secrets.h`
+
+Wi-Fi and MQTT connection details are stored in `include/secrets.h`.
+
+```cpp
+#define WIFI_SSID "YOUR_WIFI_SSID"
+#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+
+#define MQTT_HOST "YOUR_MQTT_HOST"
+#define MQTT_PORT 8883
+#define DEVICE_ID "GREENHOUSE1"
+```
+
+Optional MQTT username/password authentication can be enabled by defining both values:
+
+```cpp
+#define MQTT_USERNAME "..."
+#define MQTT_PASSWORD "..."
+```
+
+Define both or neither.
+
+For plain MQTT, `MQTT_PORT` is commonly `1883`. For MQTT over TLS it is commonly `8883`, but use the port configured on your broker.
+
+## `.env`
+
+Runtime configuration is stored in `data/.env` and loaded from LittleFS at boot.
+
+Static-IP example:
+
+```env
+DEBUG_MODE=off
+MQTT_TLS_MODE=on
+DHCP_MODE=off
+IP_ADDRESS=192.168.50.29
+GATEWAY=192.168.50.1
+SUBNET=255.255.255.0
+DNS1=192.168.50.1
+# DNS2=1.1.1.1
+```
+
+Boolean settings accept only `on` or `off`.
+
+### Debug
+
+```env
+DEBUG_MODE=on
+```
+
+enables serial debug output. `off` disables it.
+
+### MQTT TLS
+
+```env
+MQTT_TLS_MODE=on
+```
+
+uses `NetworkClientSecure` and loads the certificate from `/mqtt_ca.pem` on LittleFS. The source code does not contain certificate data.
+
+With TLS disabled:
+
+```env
+MQTT_TLS_MODE=off
+```
+
+the device uses a normal TCP MQTT connection.
+
+### DHCP / static IP
+
+For DHCP:
+
+```env
+DHCP_MODE=on
+```
+
+`IP_ADDRESS`, `GATEWAY`, `SUBNET`, `DNS1`, and `DNS2` are ignored in DHCP mode.
+
+For a static address, these values are required:
+
+```env
+DHCP_MODE=off
+IP_ADDRESS=192.168.50.29
+GATEWAY=192.168.50.1
+SUBNET=255.255.255.0
+DNS1=192.168.50.1
+```
+
+`DNS2` is optional. If omitted, the ESP32 configures no secondary DNS server. To use one:
+
+```env
+DNS2=1.1.1.1
+```
+
+If `DNS2` is present but is not a valid IPv4 address, the static network configuration is rejected.
+
+## MQTT topics
+
+| Topic | Direction | Purpose |
 |---|---|---|
-| `greenhouse/<DEVICE_ID>/telemetry` | device → server | `{"temperature":<float>,"humidity":<float>,"photo_volt":<float>,"rpm":<int>,"pwm":<int>,"lamp_level":<int>}` |
-| `greenhouse/<DEVICE_ID>/command` | server → device | `{"pwm_target":<0-255>}`, `{"lamp_level":<0-4>}`, or both combined |
+| `homeops/devices/<DEVICE_ID>/telemetry` | device → server | Sensor and controller status |
+| `homeops/devices/<DEVICE_ID>/command` | server → device | Fan and lamp commands |
 
-## Variables
+Example `DEVICE_ID`: `GREENHOUSE1`.
 
-| name | sign/constraint | semantics |
-|---|---|---|
-| `temperature` | float, -20 – 60, or `-1` | Degrees Celsius, from onboard DHT11. `-1` means the sensor read failed/invalid this cycle — not a real reading. |
-| `humidity` | float, 0 – 100, or `-1` | Relative humidity %, from onboard DHT11. `-1` means the sensor read failed/invalid this cycle — not a real reading. |
-| `photo_volt` | float, 0 – 3.3, or `-1` | Averaged voltage from the onboard photoresistor divider (ADC). Higher = brighter. `-1` means the reading was invalid (e.g. NaN). |
-| `rpm` | int, ≥ 0 | Fan speed derived from tachometer pulse count. `0` can mean the fan is genuinely stopped, **or** the tach signal isn't being read reliably — don't treat `0` as fully authoritative yet. |
-| `pwm` | int, 0 – 255 | Current fan PWM duty cycle actually applied on the device (not necessarily the last commanded value, if a command failed to apply). `0` = fan off. |
-| `lamp_level` | int, 0 – 4 | Current lamp step level, tracked via simulated button presses. `0` = lamp off/lowest. |
-| `pwm_target` (command) | int, 0 – 255 | Requested fan PWM duty cycle. `0` turns the fan off (power gated off via MOSFET). Device applies this
-`DEVICE_ID` example: `GREENHOUSE1`
+## Commands
 
-## Json Structure
+Both fan and lamp use an 8-bit PWM value.
 
-Below you will find an example of a Json Payload
+| Field | Accepted values | Meaning |
+|---|---:|---|
+| `fan_pwm` | `0..255` | Fan target. `0` = fan off and 12 V fan power disabled. |
+| `lamp_pwm` | `0..255` | Grow-lamp target. `0` = lamp off. |
+
+Negative MQTT command values are not accepted.
+
+Example:
 
 ```json
 {
-  "schemaVersion": 1,
-  "deviceId": "<DEVICE_ID>",
+  "fan_pwm": 100,
+  "lamp_pwm": 180
+}
+```
+
+A message may contain either field or both. If one supplied field is invalid, the entire command is rejected and no output changes are applied.
+
+Use a retained command because the device may be in deep sleep:
+
+```bash
+mosquitto_pub \
+  -h <BROKER_IP> \
+  -p <PORT> \
+  -t "homeops/devices/<DEVICE_ID>/command" \
+  -m '{"fan_pwm":100,"lamp_pwm":180}' \
+  -r \
+  -q 1
+```
+
+After a valid retained command has been processed, the ESP32 clears that retained command automatically.
+
+To clear it manually:
+
+```bash
+mosquitto_pub \
+  -h <BROKER_IP> \
+  -p <PORT> \
+  -t "homeops/devices/<DEVICE_ID>/command" \
+  -n \
+  -r
+```
+
+## Telemetry
+
+Example payload:
+
+```json
+{
+  "schema_version": 2,
+  "device_id": "GREENHOUSE1",
+  "utc": "2026-09-10T09:30:00Z",
+  "epoch": 1789032600,
   "data": {
-    "temperature": 23.4,
-    "humidity": 45.8,
-    "photo_volt": 1.82,
-    "rpm": 1250,
-    "pwm": 180,
-    "lamp_level": 2
+    "temperature_c": 23.4,
+    "humidity_pct": 45.8,
+    "photo_v": 1.82,
+    "fan_rpm": 1250,
+    "fan_pwm": 180,
+    "lamp_pwm": 160,
+    "fan_pwm_ok": 1,
+    "lamp_pwm_ok": 1,
+    "wifi_ok": 1,
+    "mqtt_ok": 1,
+    "wifi_rssi_dbm": -57,
+    "time_ok": 1,
+    "tls_mode": 1,
+    "tls_cert_loaded": 1,
+    "rtc_state_ok": 1,
+    "last_command_ok": 1,
+    "last_rx_fan_pwm": 180,
+    "last_rx_lamp_pwm": 160,
+    "sleeping": false,
+    "boot_count": 12
   }
 }
 ```
 
-## Subscribe to telemetry / watch commands
+## Value convention
 
-```bash
-mosquitto_sub -h <BROKER_IP> -p <PORT> -t "greenhouse/<DEVICE_ID>/#" -v
+Applied output values are always `0..255`.
+
+Diagnostic command values use:
+
+| Value | Meaning |
+|---:|---|
+| `0..255` | Valid received PWM value |
+| `-1` | Error / invalid value |
+| `-2` | No value received for that field in the current cycle |
+
+`-1` and `-2` are diagnostic values only. They are never applied as PWM outputs and are not accepted as MQTT commands.
+
+### Command diagnostics
+
+`last_command_ok`:
+
+| Value | Meaning |
+|---:|---|
+| `1` | Valid command received |
+| `-1` | Command received but invalid |
+| `-2` | No command received this cycle |
+
+`last_rx_fan_pwm` and `last_rx_lamp_pwm`:
+
+| Value | Meaning |
+|---:|---|
+| `0..255` | Valid received value |
+| `-1` | That received value was invalid, or the MQTT JSON could not be parsed |
+| `-2` | That field was not received |
+
+### RTC validity
+
+`rtc_state_ok`:
+
+| Value | Meaning |
+|---:|---|
+| `1` | RTC state marker was valid at boot/wake |
+| `-1` | RTC state marker was invalid; fan and lamp were reset to `0` |
+
+`RTC_MAGIC` is only a validity marker for RTC-retained memory. It is not the real-time clock and is not persisted to flash.
+
+## Sensor/status fields
+
+| Name | Values | Meaning |
+|---|---|---|
+| `temperature_c` | `-20..60`, or `-1` | DHT11 temperature in °C. `-1` = invalid read. |
+| `humidity_pct` | `0..100`, or `-1` | DHT11 relative humidity %. `-1` = invalid read. |
+| `photo_v` | approximately `0..3.3`, or `-1` | Averaged photoresistor voltage. `-1` = invalid read. |
+| `fan_rpm` | `>=0`, or `-1` | `0` when fan is commanded off. `-1` when fan is commanded on but no tach pulses are detected. |
+| `fan_pwm` | `0..255` | Current applied fan target. |
+| `lamp_pwm` | `0..255` | Current applied lamp target. |
+| `fan_pwm_ok` | `1` or `-1` | Fan PWM setup/write status. |
+| `lamp_pwm_ok` | `1` or `-1` | Lamp PWM setup/write status. |
+| `wifi_ok` | `1` or `-1` | Wi-Fi status. |
+| `mqtt_ok` | `1` or `-1` | MQTT status. |
+| `wifi_rssi_dbm` | dBm, or `-1` | Wi-Fi RSSI. |
+| `time_ok` | `1` or `-1` | UTC time validity. |
+| `tls_mode` | `0` or `1` | Runtime TLS mode from `.env`. |
+| `tls_cert_loaded` | `1`, `0`, or `-1` | Certificate loaded, TLS disabled, or certificate error. |
+| `sleeping` | boolean | Whether the controller is about to enter deep sleep. |
+| `boot_count` | integer | RTC-retained boot/wake counter. |
+
+## UTC time
+
+After Wi-Fi connects, the ESP32 synchronizes its system clock using SNTP/NTP. Telemetry contains ISO-8601 UTC time and Unix epoch time.
+
+If time is unavailable:
+
+```json
+{
+  "utc": "-1",
+  "epoch": -1
+}
 ```
 
-## Publish a command
+and `time_ok` is `-1`.
 
-```bash
-mosquitto_pub -h <BROKER_IP> -p <PORT> -t "greenhouse/<DEVICE_ID>/command" -m '{"pwm_target":100,"lamp_level":1}' -r -q 1
+## Fan control and physical power-off
+
+The fan has two controls:
+
+1. GPIO18 provides the inverted PWM control signal through the external NPN transistor.
+2. GPIO27 controls the external circuit that switches the fan's 12 V supply.
+
+For `fan_pwm = 1..255`, fan power is enabled and the requested PWM is applied.
+
+For `fan_pwm = 0`, the firmware places the fan PWM input in its stop state and then drives GPIO27 LOW to remove the fan's 12 V supply.
+
+The tachometer input is GPIO34 and uses the existing external 5.2 kΩ pull-up to 3.3 V. GPIO34 is configured as `INPUT`; its internal pull-up is not used.
+
+## Control cycle
+
+The normal cycle is:
+
+```text
+Wake / continue running
+        ↓
+Check/connect Wi-Fi
+        ↓
+Synchronize UTC time
+        ↓
+Connect MQTT/TLS
+        ↓
+Read sensors and RPM
+        ↓
+Listen for retained MQTT command
+        ↓
+Validate command atomically
+        ↓
+Apply requested changes
+        ↓
+Re-read sensors if outputs changed
+        ↓
+Publish final telemetry/status
+        ↓
+Clear valid retained command
+        ↓
+Fan and lamp both 0?
+       / \
+     yes  no
+      ↓    ↓
+ Deep    Stay fully awake
+ sleep   and service MQTT
+      ↓    ↓
+ Wake   Next ~60 s cycle
 ```
 
-**Always use `-r` (retain).** The device sleeps most of the time and only listens for ~2s per wake cycle; a non-retained command sent while it's asleep is lost. Retained commands are delivered the instant the device reconnects.
+While the controller remains awake, MQTT is serviced continuously. If a command arrives during that active service period, it is kept pending and processed by the next cycle instead of being discarded.
 
-Make sure to publish both commands at the same time, as shown in publish a command. if you want to set both variables do not use seperate commands. The latest retained message will overwrite previous commands.
+## Deep sleep
 
-## Clear a pending command manually
+Deep sleep is entered only when:
 
-```bash
-mosquitto_pub -h <BROKER_IP> -p <PORT> -t "greenhouse/<DEVICE_ID>/command" -n -r
+```text
+fan_pwm == 0 && lamp_pwm == 0
 ```
 
-## Behavior notes for endpoint design
+Before deep sleep the firmware:
 
-- Device wakes every ~60s.
-- If `pwm_target > 0` (fan running), device uses light sleep and stays reachable faster between cycles.
-- If fan is off, device deep-sleeps and fully disconnects/reconnects each cycle.
-- `photo_volt`, `rpm`, `temperature`, `humidity` report `-1` if that sensor read failed/invalid — treat `-1` as "no data," not a real reading.
+- puts the fan PWM signal in its stop state;
+- drives the fan 12 V power-control output LOW;
+- drives the lamp PWM output LOW;
+- holds the required OFF GPIO states;
+- disconnects MQTT;
+- disables Wi-Fi;
+- configures the timer wakeup;
+- enters deep sleep for approximately 60 seconds.
+
+Normal LEDC PWM is not relied upon during deep sleep. The fan is physically powered off through the separate fan-power control before sleep.
+
+If either fan or lamp is non-zero, the ESP32 stays fully awake and keeps servicing MQTT. The firmware does not use light sleep.
+
+## Flash persistence
+
+No fan or lamp output state is written to Preferences/NVS. This avoids flash-wear concerns from frequent control changes.
+
+RTC memory is used only to retain the current output state and boot count across deep sleep. A cold boot, power loss, or invalid RTC marker resets fan and lamp targets to `0`.
+
+## Subscribe
+
+```bash
+mosquitto_sub \
+  -h <BROKER_IP> \
+  -p <PORT> \
+  -t "homeops/devices/<DEVICE_ID>/#" \
+  -v
+```
