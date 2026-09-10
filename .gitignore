@@ -32,6 +32,8 @@ out/
 # Environment / secrets
 # ============================================================
 
+*.pem
+
 .env
 .env.*
 !.env.example
@@ -102,9 +104,10 @@ apps/frontend/coverage/
 # ============================================================
 
 docker-data/
-data/
 volumes/
 tmp/
+
+/data/
 
 # Dockerfiles and Compose files should be committed.
 # Do not ignore:
