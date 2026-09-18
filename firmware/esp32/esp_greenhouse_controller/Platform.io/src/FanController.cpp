@@ -1,6 +1,7 @@
 #include "FanController.h"
 
 #include "HardwareConfig.h"
+#include "PwmOutput.h"
 
 volatile uint32_t FanController::tachPulseCount_ = 0;
 
@@ -21,8 +22,9 @@ bool FanController::begin(uint8_t initialTarget) {
     pinMode(Hardware::FAN_SENSE_PIN, INPUT);
     attachInterrupt(digitalPinToInterrupt(Hardware::FAN_SENSE_PIN), onTachPulse, FALLING);
 
-    attached_ = ledcAttach(
+    attached_ = PwmOutput::attach(
         Hardware::FAN_PWM_PIN,
+        Hardware::FAN_PWM_CHANNEL,
         Hardware::FAN_PWM_FREQ_HZ,
         Hardware::PWM_RESOLUTION_BITS);
 
@@ -35,7 +37,10 @@ bool FanController::writeHardware(uint8_t target) {
     if (!attached_) return false;
 
     if (target == 0) {
-        bool pwmOk = ledcWrite(Hardware::FAN_PWM_PIN, outputDuty(0));
+        bool pwmOk = PwmOutput::write(
+            Hardware::FAN_PWM_PIN,
+            Hardware::FAN_PWM_CHANNEL,
+            outputDuty(0));
         digitalWrite(Hardware::FAN_POWER_PIN, LOW);
         return pwmOk;
     }
@@ -44,11 +49,16 @@ bool FanController::writeHardware(uint8_t target) {
     digitalWrite(Hardware::FAN_POWER_PIN, HIGH);
 
     if (wasOff) {
-        if (!ledcWrite(Hardware::FAN_PWM_PIN, 0)) return false;
+        if (!PwmOutput::write(Hardware::FAN_PWM_PIN, Hardware::FAN_PWM_CHANNEL, 0)) {
+            return false;
+        }
         delay(300);
     }
 
-    return ledcWrite(Hardware::FAN_PWM_PIN, outputDuty(target));
+    return PwmOutput::write(
+        Hardware::FAN_PWM_PIN,
+        Hardware::FAN_PWM_CHANNEL,
+        outputDuty(target));
 }
 
 bool FanController::applyTarget(uint8_t target) {
@@ -79,7 +89,10 @@ int32_t FanController::sampleRpm() {
 
 void FanController::prepareForDeepSleep() {
     if (attached_) {
-        outputOk_ = ledcWrite(Hardware::FAN_PWM_PIN, outputDuty(0));
+        outputOk_ = PwmOutput::write(
+            Hardware::FAN_PWM_PIN,
+            Hardware::FAN_PWM_CHANNEL,
+            outputDuty(0));
     }
     digitalWrite(Hardware::FAN_POWER_PIN, LOW);
 }

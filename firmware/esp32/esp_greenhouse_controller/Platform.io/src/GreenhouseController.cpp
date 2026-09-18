@@ -1,12 +1,7 @@
 #include "GreenhouseController.h"
 
-#include <esp_arduino_version.h>
 #include "HardwareConfig.h"
 #include "secrets.h"
-
-#if ESP_ARDUINO_VERSION_MAJOR < 3
-#error "This project targets Arduino-ESP32 core 3.x or newer."
-#endif
 
 #ifndef WIFI_SSID
 #error "WIFI_SSID must be defined in secrets.h"

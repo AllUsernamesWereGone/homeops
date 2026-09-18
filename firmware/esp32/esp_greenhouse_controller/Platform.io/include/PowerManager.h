@@ -1,9 +1,9 @@
 #pragma once
 
-#include "FanController.h"
-#include "LampController.h"
-#include "MqttManager.h"
-#include "NetworkManager.h"
+class DeviceNetworkManager;
+class FanController;
+class LampController;
+class MqttManager;
 
 class PowerManager {
 public:
@@ -12,6 +12,6 @@ public:
         FanController &fan,
         LampController &lamp,
         MqttManager &mqtt,
-        NetworkManager &network,
+        DeviceNetworkManager &network,
         bool debug);
 };

@@ -6,7 +6,7 @@
 #include "FanController.h"
 #include "LampController.h"
 #include "MqttManager.h"
-#include "NetworkManager.h"
+#include "DeviceNetworkManager.h"
 #include "PowerManager.h"
 #include "RtcState.h"
 #include "SensorManager.h"
@@ -27,7 +27,7 @@ private:
     FanController fan_;
     LampController lamp_;
     SensorManager sensors_;
-    NetworkManager network_;
+    DeviceNetworkManager network_;
     MqttManager mqtt_;
     PowerManager power_;
 

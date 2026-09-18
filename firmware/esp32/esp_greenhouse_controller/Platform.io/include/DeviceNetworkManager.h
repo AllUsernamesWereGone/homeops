@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include "AppConfig.h"
 
-class NetworkManager {
+class DeviceNetworkManager {
 public:
     void begin(const RuntimeConfig &config);
     bool ensureWifiConnected();

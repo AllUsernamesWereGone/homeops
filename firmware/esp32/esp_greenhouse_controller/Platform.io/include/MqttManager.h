@@ -1,20 +1,21 @@
 #pragma once
 
 #include <Arduino.h>
-#include <NetworkClient.h>
-#include <NetworkClientSecure.h>
 #include <PubSubClient.h>
+#include <WiFiClient.h>
+#include <WiFiClientSecure.h>
 
-#include "AppConfig.h"
-#include "FanController.h"
-#include "LampController.h"
-#include "NetworkManager.h"
-#include "RtcState.h"
 #include "SystemTypes.h"
+
+struct RuntimeConfig;
+class DeviceNetworkManager;
+class FanController;
+class LampController;
+class RtcState;
 
 class MqttManager {
 public:
-    bool begin(const RuntimeConfig &config, NetworkManager &network);
+    bool begin(const RuntimeConfig &config, DeviceNetworkManager &network);
     bool ensureConnected();
     bool waitForCommand(uint32_t durationMs);
     bool serviceUntilCommand(uint32_t durationMs);
@@ -45,9 +46,9 @@ private:
     static MqttManager *instance_;
 
     const RuntimeConfig *config_ = nullptr;
-    NetworkManager *network_ = nullptr;
-    NetworkClient plainClient_;
-    NetworkClientSecure secureClient_;
+    DeviceNetworkManager *network_ = nullptr;
+    WiFiClient plainClient_;
+    WiFiClientSecure secureClient_;
     PubSubClient mqtt_;
 
     CommandState pendingCommand_;

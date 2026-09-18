@@ -1,15 +1,15 @@
-#include "NetworkManager.h"
+#include "DeviceNetworkManager.h"
 
 #include <WiFi.h>
 #include <time.h>
 #include "HardwareConfig.h"
 #include "secrets.h"
 
-void NetworkManager::begin(const RuntimeConfig &config) {
+void DeviceNetworkManager::begin(const RuntimeConfig &config) {
     config_ = &config;
 }
 
-bool NetworkManager::ensureWifiConnected() {
+bool DeviceNetworkManager::ensureWifiConnected() {
     if (WiFi.status() == WL_CONNECTED) return true;
     if (config_ == nullptr) return false;
 
@@ -46,11 +46,11 @@ bool NetworkManager::ensureWifiConnected() {
     return ok;
 }
 
-bool NetworkManager::timeValid() const {
+bool DeviceNetworkManager::timeValid() const {
     return time(nullptr) >= Hardware::MIN_VALID_EPOCH;
 }
 
-bool NetworkManager::syncUtcTime() {
+bool DeviceNetworkManager::syncUtcTime() {
     if (!connected()) return false;
 
     configTime(0, 0, Hardware::NTP_SERVER_1, Hardware::NTP_SERVER_2);
@@ -65,7 +65,7 @@ bool NetworkManager::syncUtcTime() {
     return false;
 }
 
-bool NetworkManager::formatUtc(char *buffer, size_t size, int64_t &epochOut) const {
+bool DeviceNetworkManager::formatUtc(char *buffer, size_t size, int64_t &epochOut) const {
     time_t now = time(nullptr);
     if (now < Hardware::MIN_VALID_EPOCH) {
         snprintf(buffer, size, "%s", "-1");
@@ -85,15 +85,15 @@ bool NetworkManager::formatUtc(char *buffer, size_t size, int64_t &epochOut) con
     return true;
 }
 
-int32_t NetworkManager::rssi() const {
+int32_t DeviceNetworkManager::rssi() const {
     return connected() ? WiFi.RSSI() : -1;
 }
 
-bool NetworkManager::connected() const {
+bool DeviceNetworkManager::connected() const {
     return WiFi.status() == WL_CONNECTED;
 }
 
-void NetworkManager::shutdown() {
+void DeviceNetworkManager::shutdown() {
     WiFi.disconnect(true, false);
     WiFi.mode(WIFI_OFF);
 }

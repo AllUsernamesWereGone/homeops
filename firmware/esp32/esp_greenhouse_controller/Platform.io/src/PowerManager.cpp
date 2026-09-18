@@ -3,7 +3,11 @@
 #include <Arduino.h>
 #include <driver/gpio.h>
 #include <esp_sleep.h>
+#include "DeviceNetworkManager.h"
+#include "FanController.h"
 #include "HardwareConfig.h"
+#include "LampController.h"
+#include "MqttManager.h"
 
 void PowerManager::releaseDeepSleepHolds() {
     gpio_deep_sleep_hold_dis();
@@ -15,7 +19,7 @@ void PowerManager::enterDeepSleep(
     FanController &fan,
     LampController &lamp,
     MqttManager &mqtt,
-    NetworkManager &network,
+    DeviceNetworkManager &network,
     bool debug) {
 
     fan.prepareForDeepSleep();

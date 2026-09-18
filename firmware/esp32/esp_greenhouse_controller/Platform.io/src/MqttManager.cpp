@@ -4,12 +4,17 @@
 #include <LittleFS.h>
 #include <cstring>
 
+#include "AppConfig.h"
+#include "DeviceNetworkManager.h"
+#include "FanController.h"
 #include "HardwareConfig.h"
+#include "LampController.h"
+#include "RtcState.h"
 #include "secrets.h"
 
 MqttManager *MqttManager::instance_ = nullptr;
 
-bool MqttManager::begin(const RuntimeConfig &config, NetworkManager &network) {
+bool MqttManager::begin(const RuntimeConfig &config, DeviceNetworkManager &network) {
     config_ = &config;
     network_ = &network;
     instance_ = this;
@@ -88,7 +93,7 @@ void MqttManager::handleMessage(char *topic, byte *payload, unsigned int length)
 
     pendingCommand_.received = true;
 
-    JsonDocument doc;
+    StaticJsonDocument<256> doc;
     DeserializationError error = deserializeJson(doc, payload, length);
     if (error || !doc.is<JsonObject>()) {
         pendingCommand_.invalid = true;
@@ -243,13 +248,13 @@ bool MqttManager::publishStatus(
         epoch = -1;
     }
 
-    JsonDocument doc;
+    StaticJsonDocument<Hardware::MQTT_BUFFER_SIZE> doc;
     doc["schema_version"] = 2;
     doc["device_id"] = DEVICE_ID;
     doc["utc"] = utc;
     doc["epoch"] = epoch;
 
-    JsonObject data = doc["data"].to<JsonObject>();
+    JsonObject data = doc.createNestedObject("data");
     data["temperature_c"] = sensors.temperatureC;
     data["humidity_pct"] = sensors.humidityPct;
     data["photo_v"] = sensors.photoVolts;

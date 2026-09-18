@@ -1,13 +1,15 @@
 #include "LampController.h"
 
 #include "HardwareConfig.h"
+#include "PwmOutput.h"
 
 bool LampController::begin(uint8_t initialTarget) {
     pinMode(Hardware::LAMP_PWM_PIN, OUTPUT);
     digitalWrite(Hardware::LAMP_PWM_PIN, LOW);
 
-    attached_ = ledcAttach(
+    attached_ = PwmOutput::attach(
         Hardware::LAMP_PWM_PIN,
+        Hardware::LAMP_PWM_CHANNEL,
         Hardware::LAMP_PWM_FREQ_HZ,
         Hardware::PWM_RESOLUTION_BITS);
 
@@ -18,7 +20,10 @@ bool LampController::begin(uint8_t initialTarget) {
 
 bool LampController::writeHardware(uint8_t target) {
     if (!attached_) return false;
-    return ledcWrite(Hardware::LAMP_PWM_PIN, target);
+    return PwmOutput::write(
+        Hardware::LAMP_PWM_PIN,
+        Hardware::LAMP_PWM_CHANNEL,
+        target);
 }
 
 bool LampController::applyTarget(uint8_t target) {
@@ -28,7 +33,12 @@ bool LampController::applyTarget(uint8_t target) {
 }
 
 void LampController::prepareForDeepSleep() {
-    if (attached_) outputOk_ = ledcWrite(Hardware::LAMP_PWM_PIN, 0);
+    if (attached_) {
+        outputOk_ = PwmOutput::write(
+            Hardware::LAMP_PWM_PIN,
+            Hardware::LAMP_PWM_CHANNEL,
+            0);
+    }
 }
 
 uint8_t LampController::target() const {
