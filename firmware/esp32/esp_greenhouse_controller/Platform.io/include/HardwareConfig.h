@@ -13,7 +13,7 @@ constexpr uint8_t DHT_SENSE_PIN = 25;
 constexpr uint8_t LAMP_PWM_PIN = 19;
 
 constexpr uint32_t FAN_PWM_FREQ_HZ = 25000;
-constexpr uint32_t LAMP_PWM_FREQ_HZ = 2000;
+constexpr uint32_t LAMP_PWM_FREQ_HZ = 25000;
 constexpr uint8_t FAN_PWM_CHANNEL = 0;
 constexpr uint8_t LAMP_PWM_CHANNEL = 1;
 constexpr uint8_t PWM_RESOLUTION_BITS = 8;
