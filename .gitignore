@@ -155,3 +155,5 @@ firmware/esp32/src/secrets.h
 *.tmp
 *.bak
 firmware/esp32/esp_greenhouse_controller/Platform.io/include/secrets.h
+
+**/.history/
