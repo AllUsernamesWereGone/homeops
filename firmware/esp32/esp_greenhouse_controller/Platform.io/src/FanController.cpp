@@ -6,7 +6,7 @@
 volatile uint32_t FanController::tachPulseCount_ = 0;
 
 void ARDUINO_ISR_ATTR FanController::onTachPulse() {
-    ++tachPulseCount_;
+    tachPulseCount_ = tachPulseCount_ + 1U;
 }
 
 uint8_t FanController::outputDuty(uint8_t target) {

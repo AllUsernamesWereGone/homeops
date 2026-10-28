@@ -33,9 +33,9 @@ constexpr float DHT_TEMP_MAX_C = 60.0f;
 constexpr float DHT_HUM_MIN_PCT = 0.0f;
 constexpr float DHT_HUM_MAX_PCT = 100.0f;
 
-constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 8000;
+constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 15000;
 constexpr uint32_t TIME_SYNC_TIMEOUT_MS = 5000;
-constexpr uint32_t MQTT_COMMAND_WINDOW_MS = 2000;
+constexpr uint32_t MQTT_COMMAND_WINDOW_MS = 4000;
 constexpr uint32_t ACTIVE_CYCLE_INTERVAL_MS = 60000;
 constexpr uint32_t DEEP_SLEEP_MS = 60000;
 constexpr uint32_t TACH_SAMPLE_MS = 500;

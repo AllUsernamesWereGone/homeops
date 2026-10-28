@@ -125,7 +125,7 @@ void GreenhouseController::runCycle() {
             sleeping);
 
         if (clearRetained) mqtt_.clearRetainedCommand();
-        delay(20);
+        delay(2000);
     }
 
     mqtt_.clearPendingCommand();
