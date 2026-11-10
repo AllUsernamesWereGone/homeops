@@ -82,10 +82,149 @@
       @if ((device.capabilities ?? []).length > 0) {
         <div class="capability-list">
           @for (capability of device.capabilities ?? []; track capability) {
-            <span>{{ capability }}</span>
+            <span>{{ formatCapability(capability) }}</span>
           }
         </div>
       }
     </section>
+
+    <section class="card">
+      <header class="section-header">
+        <div>
+          <p class="eyebrow">Read-only data</p>
+          <h2>Latest telemetry</h2>
+
+          @if (deviceState(); as state) {
+            <p class="section-subtitle">
+              Reported {{ formatDateTime(state.reportedAt) }},
+              received {{ formatDateTime(state.receivedAt) }}
+            </p>
+          } @else {
+            <p class="section-subtitle">
+              Values appear here after the backend receives MQTT telemetry or state.
+            </p>
+          }
+        </div>
+
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="stateLoading()"
+          (click)="loadLatestState()"
+        >
+          {{ stateLoading() ? 'Refreshing...' : 'Refresh' }}
+        </button>
+      </header>
+
+      @if (stateErrorMessage()) {
+        <p class="muted-text">{{ stateErrorMessage() }}</p>
+      }
+
+      @if (telemetryCards().length > 0) {
+        <div class="telemetry-grid">
+          @for (card of telemetryCards(); track card.key) {
+            <article class="telemetry-card">
+              <span>{{ card.label }}</span>
+
+              <strong>
+                {{ card.value }}
+                @if (card.unit) {
+                  <small>{{ card.unit }}</small>
+                }
+              </strong>
+
+              @if (card.description) {
+                <p>{{ card.description }}</p>
+              }
+            </article>
+          }
+        </div>
+      } @else if (!stateLoading()) {
+        <p class="empty-text">No readable telemetry values available yet.</p>
+      }
+    </section>
+
+    <section class="card">
+      <header class="section-header">
+        <div>
+          <p class="eyebrow">Controls</p>
+          <h2>Device actions</h2>
+          <p class="section-subtitle">
+            These controls are generated from capabilities and latest state. Applying a value only prepares the command
+            for now.
+          </p>
+        </div>
+      </header>
+
+      @if (controlMessage()) {
+        <p class="control-message">{{ controlMessage() }}</p>
+      }
+
+      @if (controlCards().length > 0) {
+        <div class="control-grid">
+          @for (control of controlCards(); track control.id) {
+            <article class="control-card">
+              <div>
+                <span>{{ control.command }}</span>
+                <h3>{{ control.label }}</h3>
+
+                <p>
+                  Current:
+                  <strong>
+                    {{ control.currentValue ?? 'Unknown' }}
+                    @if (control.unit) {
+                      {{ control.unit }}
+                    }
+                  </strong>
+                </p>
+              </div>
+
+              <button type="button" class="secondary-button" (click)="openControl(control)">
+                Change
+              </button>
+            </article>
+          }
+        </div>
+      } @else {
+        <p class="empty-text">
+          No controls available yet. Add capabilities like FAN_SWITCH or LIGHT_SWITCH, or provide outputs in latest
+          state.
+        </p>
+      }
+    </section>
+
+    <section class="card planned-card">
+      <header class="section-header">
+        <div>
+          <p class="eyebrow">Automation</p>
+          <h2>Schedules and curves</h2>
+          <p class="section-subtitle">
+            Prepared area for later fan RPM curves, daylight simulation, and timed output changes.
+          </p>
+        </div>
+      </header>
+
+      <div class="planned-grid">
+        <div>
+          <span>Fan curve</span>
+          <strong>Planned</strong>
+          <p>Example: set fan RPM by time of day or temperature range.</p>
+        </div>
+
+        <div>
+          <span>Daylight curve</span>
+          <strong>Planned</strong>
+          <p>Example: gradually increase and decrease light intensity.</p>
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (selectedControl(); as control) {
+    <app-device-control-modal
+      [control]="control"
+      (cancel)="closeControlModal()"
+      (apply)="applyControlChange($event)"
+    />
   }
 </main>

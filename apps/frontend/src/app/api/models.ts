@@ -3,11 +3,15 @@
 
 export type { ApiErrorResponse } from './models/api-error-response';
 export type { DeviceCapability } from './models/device-capability';
+export type { DeviceCommandRequestDto } from './models/device-command-request-dto';
+export type { DeviceCommandResultDto } from './models/device-command-result-dto';
 export type { DeviceCreateDto } from './models/device-create-dto';
 export type { DeviceDto } from './models/device-dto';
 export type { DeviceStatus } from './models/device-status';
+export type { DeviceTelemetryStateDto } from './models/device-telemetry-state-dto';
 export type { DeviceTransport } from './models/device-transport';
 export type { DeviceType } from './models/device-type';
 export type { DeviceUpdateDto } from './models/device-update-dto';
+export type { JsonNode } from './models/json-node';
 export type { SystemInfoDto } from './models/system-info-dto';
 export type { ValidationErrorDto } from './models/validation-error-dto';

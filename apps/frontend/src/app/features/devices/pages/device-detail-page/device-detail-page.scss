@@ -12,11 +12,20 @@
   margin-right: auto;
 }
 
-.detail-header {
+.card + .card {
+  margin-top: 1.25rem;
+}
+
+.detail-header,
+.section-header,
+.control-card {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 1.5rem;
+}
+
+.detail-header {
   margin-bottom: 2rem;
 }
 
@@ -27,12 +36,27 @@
   line-height: 1.05;
 }
 
+.section-header h2 {
+  margin: 0;
+  color: #f8fafc;
+}
+
+.detail-description,
+.section-subtitle,
+.muted-text,
+.empty-text {
+  color: #cbd5e1;
+  line-height: 1.55;
+}
+
 .detail-description {
   max-width: 760px;
   margin: 0.8rem 0 0;
-  color: #cbd5e1;
   font-size: 1.05rem;
-  line-height: 1.55;
+}
+
+.section-subtitle {
+  margin: 0.5rem 0 0;
 }
 
 .detail-actions {
@@ -42,13 +66,31 @@
   gap: 0.7rem;
 }
 
-.detail-grid {
+.detail-grid,
+.telemetry-grid,
+.control-grid,
+.planned-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 1rem;
 }
 
-.detail-item {
+.detail-grid {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.telemetry-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.control-grid,
+.planned-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.detail-item,
+.telemetry-card,
+.control-card,
+.planned-grid div {
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 0.9rem;
   padding: 1rem;
@@ -56,17 +98,49 @@
   color: #f8fafc;
 }
 
-.detail-item span {
+.detail-item span,
+.telemetry-card span,
+.control-card span,
+.planned-grid span {
   display: block;
   margin-bottom: 0.35rem;
   color: #94a3b8;
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 800;
 }
 
-.detail-item strong {
+.detail-item strong,
+.telemetry-card strong,
+.control-card strong,
+.planned-grid strong {
   color: #f8fafc;
   word-break: break-word;
+}
+
+.telemetry-card strong {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.telemetry-card small {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.telemetry-card p,
+.control-card p,
+.planned-grid p {
+  margin: 0.65rem 0 0;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.control-card {
+  align-items: center;
 }
 
 .capability-list {
@@ -86,12 +160,32 @@
   font-weight: 800;
 }
 
+.control-message {
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: rgba(56, 189, 248, 0.12);
+  color: #bae6fd;
+  font-weight: 700;
+}
+
+.planned-card {
+  opacity: 0.85;
+}
+
 @media (max-width: 750px) {
-  .detail-header {
+  .detail-header,
+  .section-header,
+  .control-card {
     flex-direction: column;
   }
 
   .detail-actions {
     justify-content: flex-start;
+  }
+
+  .section-header .secondary-button,
+  .control-card .secondary-button {
+    width: 100%;
   }
 }

@@ -4,7 +4,9 @@ import dev.homeops.backend.basetest.TestData;
 import dev.homeops.backend.dto.device.DeviceCreateDto;
 import dev.homeops.backend.dto.device.DeviceUpdateDto;
 import dev.homeops.backend.endpoint.DeviceEndpoint;
+import dev.homeops.backend.service.DeviceCommandService;
 import dev.homeops.backend.service.DeviceService;
+import dev.homeops.backend.service.DeviceTelemetryStateService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -34,6 +36,13 @@ class DeviceEndpointTest implements TestData {
 
     @MockitoBean
     private DeviceService deviceService;
+
+    @MockitoBean
+    private DeviceTelemetryStateService deviceTelemetryStateService;
+
+    @MockitoBean
+    private DeviceCommandService deviceCommandService;
+
 
     @Test
     void givenDevices_whenFindAll_thenReturnDevices() throws Exception {
@@ -186,6 +195,65 @@ class DeviceEndpointTest implements TestData {
                       "location": "Desk",
                       "description": "Invalid enum test.",
                       "capabilities": []
+                    }
+                    """))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void givenExistingState_whenFindLatestStateByDeviceId_thenReturnState() throws Exception {
+        when(deviceTelemetryStateService.findLatestByDeviceId(DEVICE_ID_GREENHOUSE))
+            .thenReturn(TestData.createGreenhouseTelemetryStateDto());
+
+        mockMvc.perform(get(DeviceEndpoint.BASE_PATH + "/{deviceId}/state", DEVICE_ID_GREENHOUSE))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.deviceId").value(DEVICE_ID_GREENHOUSE))
+            .andExpect(jsonPath("$.messageType").value("TELEMETRY"))
+            .andExpect(jsonPath("$.schemaVersion").value(1))
+            .andExpect(jsonPath("$.data.readings.temperatureC.value").value(24.6))
+            .andExpect(jsonPath("$.data.readings.temperatureC.unit").value("C"));
+    }
+
+    @Test
+    void givenValidCommandRequest_whenPublishCommand_thenReturnCommandResult() throws Exception {
+        when(deviceCommandService.publishCommand(eq(DEVICE_ID_GREENHOUSE), any()))
+            .thenReturn(new dev.homeops.backend.dto.device.DeviceCommandResultDto(
+                DEVICE_ID_GREENHOUSE,
+                "homeops/devices/greenhouse-esp32-01/command",
+                "SET_OUTPUT",
+                "fan1",
+                "state",
+                TestData.TEST_INSTANT
+            ));
+
+        mockMvc.perform(post(DeviceEndpoint.BASE_PATH + "/{deviceId}/commands", DEVICE_ID_GREENHOUSE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "command": "SET_OUTPUT",
+                      "target": "fan1",
+                      "property": "state",
+                      "value": "ON"
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.deviceId").value(DEVICE_ID_GREENHOUSE))
+            .andExpect(jsonPath("$.topic").value("homeops/devices/greenhouse-esp32-01/command"))
+            .andExpect(jsonPath("$.command").value("SET_OUTPUT"))
+            .andExpect(jsonPath("$.target").value("fan1"))
+            .andExpect(jsonPath("$.property").value("state"));
+    }
+
+    @Test
+    void givenInvalidCommandRequest_whenPublishCommand_thenReturnBadRequest() throws Exception {
+        mockMvc.perform(post(DeviceEndpoint.BASE_PATH + "/{deviceId}/commands", DEVICE_ID_GREENHOUSE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "command": "",
+                      "target": "",
+                      "property": "",
+                      "value": null
                     }
                     """))
             .andExpect(status().isBadRequest());

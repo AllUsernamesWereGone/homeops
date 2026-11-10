@@ -1,9 +1,14 @@
 package dev.homeops.backend.endpoint;
 
+import dev.homeops.backend.dto.device.DeviceCommandRequestDto;
+import dev.homeops.backend.dto.device.DeviceCommandResultDto;
 import dev.homeops.backend.dto.device.DeviceCreateDto;
 import dev.homeops.backend.dto.device.DeviceDto;
+import dev.homeops.backend.dto.device.DeviceTelemetryStateDto;
 import dev.homeops.backend.dto.device.DeviceUpdateDto;
+import dev.homeops.backend.service.DeviceCommandService;
 import dev.homeops.backend.service.DeviceService;
+import dev.homeops.backend.service.DeviceTelemetryStateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -36,9 +41,13 @@ public class DeviceEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final DeviceService deviceService;
+    private final DeviceTelemetryStateService deviceTelemetryStateService;
+    private final DeviceCommandService deviceCommandService;
 
-    public DeviceEndpoint(DeviceService deviceService) {
+    public DeviceEndpoint(DeviceService deviceService, DeviceTelemetryStateService deviceTelemetryStateService, DeviceCommandService deviceCommandService) {
         this.deviceService = deviceService;
+        this.deviceTelemetryStateService = deviceTelemetryStateService;
+        this.deviceCommandService = deviceCommandService;
     }
 
     /**
@@ -82,6 +91,23 @@ public class DeviceEndpoint {
         return deviceService.findByDeviceId(deviceId);
     }
 
+    @GetMapping("/{deviceId}/state")
+    @Operation(
+        summary = "Get latest device state",
+        description = "Returns the latest stored MQTT state or telemetry payload for this device."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Latest state returned successfully"),
+        @ApiResponse(responseCode = "404", description = "Device or latest state was not found")
+    })
+    public DeviceTelemetryStateDto findLatestStateByDeviceId(
+        @Parameter(description = "Stable external device id", example = "greenhouse-esp32-01")
+        @PathVariable String deviceId
+    ) {
+        LOG.trace("GET {}/{}/state", BASE_PATH, deviceId);
+        return deviceTelemetryStateService.findLatestByDeviceId(deviceId);
+    }
+
     /**
      * Creates a new device registry entry.
      *
@@ -102,6 +128,25 @@ public class DeviceEndpoint {
     public DeviceDto create(@Valid @RequestBody DeviceCreateDto request) {
         LOG.trace("POST {}", BASE_PATH);
         return deviceService.create(request);
+    }
+
+    @PostMapping(value = "/{deviceId}/commands", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(
+        summary = "Publish device command",
+        description = "Publishes a command to the device MQTT command topic. This does not yet wait for a command result."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Command published successfully"),
+        @ApiResponse(responseCode = "400", description = "Command request is invalid"),
+        @ApiResponse(responseCode = "404", description = "Device was not found")
+    })
+    public DeviceCommandResultDto publishCommand(
+        @Parameter(description = "Stable external device id", example = "greenhouse-esp32-01")
+        @PathVariable String deviceId,
+        @Valid @RequestBody DeviceCommandRequestDto request
+    ) {
+        LOG.trace("POST {}/{}/commands", BASE_PATH, deviceId);
+        return deviceCommandService.publishCommand(deviceId, request);
     }
 
     /**
